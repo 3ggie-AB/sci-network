@@ -10,7 +10,7 @@ CREATE DATABASE IF NOT EXISTS netmon;
 CREATE TABLE IF NOT EXISTS netmon.network_logs (
     id         String,
     user_id    String,
-    action     LowCardinality(String),  -- 'ping' | 'snmp'
+    action     LowCardinality(String),  -- 'ping' | 'snmp' | 'http'
     target     String,
     result     String,                  -- JSON string
     success    UInt8,                   -- 0 = false, 1 = true

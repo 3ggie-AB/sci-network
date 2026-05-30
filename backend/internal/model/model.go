@@ -19,34 +19,35 @@ const (
 type Permission string
 
 const (
-	PermPing          Permission = "ping:execute"
-	PermSNMP          Permission = "snmp:execute"
-	PermUserCreate    Permission = "user:create"
-	PermUserRead      Permission = "user:read"
-	PermUserUpdate    Permission = "user:update"
-	PermUserDelete    Permission = "user:delete"
+	PermPing           Permission = "ping:execute"
+	PermSNMP           Permission = "snmp:execute"
+	PermHTTP           Permission = "http:execute"
+	PermUserCreate     Permission = "user:create"
+	PermUserRead       Permission = "user:read"
+	PermUserUpdate     Permission = "user:update"
+	PermUserDelete     Permission = "user:delete"
 	PermFeedbackCreate Permission = "feedback:create"
-	PermFeedbackRead  Permission = "feedback:read"
+	PermFeedbackRead   Permission = "feedback:read"
 	PermFeedbackManage Permission = "feedback:manage"
-	PermReportRead    Permission = "report:read"
+	PermReportRead     Permission = "report:read"
 )
 
 // RolePermissions maps each role to its allowed permissions
 var RolePermissions = map[Role][]Permission{
 	RoleAdmin: {
-		PermPing, PermSNMP,
+		PermPing, PermSNMP, PermHTTP,
 		PermUserCreate, PermUserRead, PermUserUpdate, PermUserDelete,
 		PermFeedbackCreate, PermFeedbackRead, PermFeedbackManage,
 		PermReportRead,
 	},
 	RoleAtasan: {
-		PermPing, PermSNMP,
+		PermPing, PermSNMP, PermHTTP,
 		PermUserRead,
 		PermFeedbackRead, PermFeedbackManage,
 		PermReportRead,
 	},
 	RoleTeknisi: {
-		PermPing, PermSNMP,
+		PermPing, PermSNMP, PermHTTP,
 		PermFeedbackCreate, PermFeedbackRead,
 	},
 	RoleStaff: {
@@ -152,8 +153,8 @@ type Feedback struct {
 	UpdatedAt   time.Time        `db:"updated_at"   json:"updated_at"`
 
 	// Joined fields
-	Username        string  `db:"username"         json:"username,omitempty"`
-	AssignedToName  *string `db:"assigned_to_name" json:"assigned_to_name,omitempty"`
+	Username       string  `db:"username"         json:"username,omitempty"`
+	AssignedToName *string `db:"assigned_to_name" json:"assigned_to_name,omitempty"`
 }
 
 type CreateFeedbackRequest struct {
@@ -213,12 +214,33 @@ type SNMPResult struct {
 	Error   string            `json:"error,omitempty"`
 }
 
+// ─── HTTP GET ────────────────────────────────────────────────────────────────
+
+type HTTPGetRequest struct {
+	URL     string            `json:"url"     validate:"required"`
+	Headers map[string]string `json:"headers"`
+	Timeout int               `json:"timeout"`
+}
+
+type HTTPGetResult struct {
+	URL           string            `json:"url"`
+	StatusCode    int               `json:"status_code"`
+	Status        string            `json:"status"`
+	ContentType   string            `json:"content_type,omitempty"`
+	Headers       map[string]string `json:"headers,omitempty"`
+	Body          string            `json:"body,omitempty"`
+	BodyTruncated bool              `json:"body_truncated"`
+	Duration      int64             `json:"duration_ms"`
+	IsUp          bool              `json:"is_up"`
+	Error         string            `json:"error,omitempty"`
+}
+
 // ─── Network Log (ClickHouse) ─────────────────────────────────────────────────
 
 type NetworkLog struct {
 	ID        string    `db:"id"         json:"id"`
 	UserID    string    `db:"user_id"    json:"user_id"`
-	Action    string    `db:"action"     json:"action"` // ping / snmp
+	Action    string    `db:"action"     json:"action"` // ping / snmp / http
 	Target    string    `db:"target"     json:"target"`
 	Result    string    `db:"result"     json:"result"` // JSON
 	Success   bool      `db:"success"    json:"success"`

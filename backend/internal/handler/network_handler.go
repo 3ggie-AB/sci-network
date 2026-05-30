@@ -71,6 +71,35 @@ func SNMPGet(c *fiber.Ctx) error {
 	})
 }
 
+// POST /api/network/http-get
+func HTTPGet(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*auth.Claims)
+
+	var req model.HTTPGetRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Format request tidak valid",
+		})
+	}
+	if req.URL == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "URL wajib diisi",
+		})
+	}
+
+	result, err := service.ExecuteHTTPGet(claims.UserID, req)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "HTTP GET selesai",
+		"data":    result,
+	})
+}
+
 // GET /api/network/snmp/oids  - common OID reference
 func SNMPOIDs(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{

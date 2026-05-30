@@ -85,6 +85,10 @@ func SetupRoutes(app *fiber.App) {
 		middleware.RequirePermission(model.PermSNMP),
 		SNMPGet,
 	)
+	net.Post("/http-get",
+		middleware.RequirePermission(model.PermHTTP),
+		HTTPGet,
+	)
 	net.Get("/snmp/oids",
 		middleware.RequirePermission(model.PermSNMP),
 		SNMPOIDs,

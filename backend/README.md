@@ -1,6 +1,6 @@
 # NetMon - Network Monitoring API
 
-Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, manajemen user RBAC, dan umpan balik/keluhan.
+Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, HTTP GET checker, manajemen user RBAC, dan umpan balik/keluhan.
 
 ## 🏗️ Tech Stack
 
@@ -10,7 +10,7 @@ Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, manajemen u
 | DB Utama   | MySQL 8.0 (user, feedback)          |
 | DB Analitik| ClickHouse (log jaringan)           |
 | Auth       | JWT (HS256, expire 24 jam)          |
-| Monitoring | ICMP Ping + SNMP v1/v2c/v3          |
+| Monitoring | ICMP Ping + SNMP v1/v2c/v3 + HTTP GET |
 
 ---
 
@@ -20,6 +20,7 @@ Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, manajemen u
 |---------------------|:-----:|:------:|:-------:|:-----:|:--------:|
 | ping:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
 | snmp:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
+| http:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
 | user:create         | ✅    | ❌     | ❌      | ❌    | ❌       |
 | user:read           | ✅    | ✅     | ❌      | ❌    | ❌       |
 | user:update         | ✅    | ❌     | ❌      | ❌    | ❌       |
@@ -153,11 +154,21 @@ POST /api/network/snmp
   "timeout": 5
 }
 
+# HTTP GET API/server
+POST /api/network/http-get
+{
+  "url": "https://api.example.com/health",
+  "headers": {
+    "Authorization": "Bearer <token>"
+  },
+  "timeout": 10
+}
+
 # Referensi OID umum
 GET /api/network/snmp/oids
 
 # Log jaringan
-GET /api/network/logs?page=1&limit=50&action=ping
+GET /api/network/logs?page=1&limit=50&action=http
 
 # Statistik (Admin/Atasan)
 GET /api/network/stats
@@ -214,6 +225,7 @@ netmon/
 │   └── service/
 │       ├── ping_service.go  # ICMP ping logic
 │       ├── snmp_service.go  # SNMP GET logic
+│       ├── http_service.go  # HTTP GET checker logic
 │       └── seeder.go        # Default user seeder
 ├── migrations/
 │   ├── mysql.sql            # DDL MySQL

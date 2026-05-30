@@ -36,6 +36,7 @@ type NetworkLogFilter struct {
 type NetworkLogStats struct {
 	TotalPings    int64   `json:"total_pings"`
 	TotalSNMP     int64   `json:"total_snmp"`
+	TotalHTTP     int64   `json:"total_http"`
 	SuccessRate   float64 `json:"success_rate"`
 	AvgDurationMs float64 `json:"avg_duration_ms"`
 }
@@ -95,10 +96,11 @@ func GetNetworkStats() (*NetworkLogStats, error) {
 		SELECT
 			countIf(action = 'ping')                       AS total_pings,
 			countIf(action = 'snmp')                       AS total_snmp,
-			round(countIf(success = true) / count() * 100, 2) AS success_rate,
-			round(avg(duration), 2)                        AS avg_duration
+			countIf(action = 'http')                       AS total_http,
+			if(count() = 0, 0, round(countIf(success = true) / count() * 100, 2)) AS success_rate,
+			if(count() = 0, 0, round(avg(duration), 2))     AS avg_duration
 		FROM network_logs`)
 
-	err := row.Scan(&stats.TotalPings, &stats.TotalSNMP, &stats.SuccessRate, &stats.AvgDurationMs)
+	err := row.Scan(&stats.TotalPings, &stats.TotalSNMP, &stats.TotalHTTP, &stats.SuccessRate, &stats.AvgDurationMs)
 	return stats, err
 }
