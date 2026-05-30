@@ -1,0 +1,143 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	"github.com/yourorg/netmon/config"
+)
+
+var MySQL *sqlx.DB
+var ClickHouse driver.Conn
+
+// InitMySQL initializes MySQL connection
+func InitMySQL() {
+	cfg := config.App
+	if err := ensureMySQLDatabase(cfg); err != nil {
+		log.Fatalf("[MYSQL] Failed to create database: %v", err)
+	}
+
+	db, err := sqlx.Connect("mysql", mysqlDSN(cfg, cfg.MySQLDBName))
+	if err != nil {
+		log.Fatalf("[MYSQL] Failed to connect: %v", err)
+	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	if err = db.Ping(); err != nil {
+		log.Fatalf("[MYSQL] Ping failed: %v", err)
+	}
+
+	MySQL = db
+	log.Println("[MYSQL] Connected successfully")
+}
+
+// InitClickHouse initializes ClickHouse connection
+func InitClickHouse() {
+	cfg := config.App
+	if err := ensureClickHouseDatabase(cfg); err != nil {
+		log.Fatalf("[CLICKHOUSE] Failed to create database: %v", err)
+	}
+
+	conn, err := clickhouse.Open(clickHouseOptions(cfg, cfg.ClickHouseDBName))
+	if err != nil {
+		log.Fatalf("[CLICKHOUSE] Failed to connect: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err = conn.Ping(ctx); err != nil {
+		log.Fatalf("[CLICKHOUSE] Ping failed: %v", err)
+	}
+
+	ClickHouse = conn
+	log.Println("[CLICKHOUSE] Connected successfully")
+}
+
+func ensureMySQLDatabase(cfg *config.Config) error {
+	dbName, err := quoteDatabaseName(cfg.MySQLDBName)
+	if err != nil {
+		return err
+	}
+
+	db, err := sqlx.Connect("mysql", mysqlDSN(cfg, ""))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec(fmt.Sprintf(
+		"CREATE DATABASE IF NOT EXISTS %s CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+		dbName,
+	))
+	return err
+}
+
+func ensureClickHouseDatabase(cfg *config.Config) error {
+	dbName, err := quoteDatabaseName(cfg.ClickHouseDBName)
+	if err != nil {
+		return err
+	}
+
+	conn, err := clickhouse.Open(clickHouseOptions(cfg, "default"))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err = conn.Ping(ctx); err != nil {
+		return err
+	}
+
+	return conn.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName))
+}
+
+func mysqlDSN(cfg *config.Config, database string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
+		cfg.MySQLUser, cfg.MySQLPassword,
+		cfg.MySQLHost, cfg.MySQLPort,
+		database,
+	)
+}
+
+func clickHouseOptions(cfg *config.Config, database string) *clickhouse.Options {
+	return &clickhouse.Options{
+		Addr: []string{fmt.Sprintf("%s:%s", cfg.ClickHouseHost, cfg.ClickHousePort)},
+		Auth: clickhouse.Auth{
+			Database: database,
+			Username: cfg.ClickHouseUser,
+			Password: cfg.ClickHousePassword,
+		},
+		DialTimeout:     10 * time.Second,
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 10 * time.Minute,
+	}
+}
+
+func quoteDatabaseName(name string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("database name cannot be empty")
+	}
+
+	for _, ch := range name {
+		if ch == '_' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9' {
+			continue
+		}
+		return "", fmt.Errorf("database name %q contains unsupported character %q", name, ch)
+	}
+
+	return "`" + name + "`", nil
+}
