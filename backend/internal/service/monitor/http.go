@@ -1,4 +1,4 @@
-package service
+package monitor
 
 import (
 	"encoding/json"
@@ -15,8 +15,22 @@ import (
 
 const maxHTTPResponseBodyBytes = 64 * 1024
 
-// ExecuteHTTPGet performs an HTTP GET request for API/server checks.
 func ExecuteHTTPGet(userID string, req model.HTTPGetRequest) (*model.HTTPGetResult, error) {
+	return executeHTTPGet(userID, nil, req)
+}
+
+func ExecuteHTTPGetForDevice(userID string, device model.Device) (*model.HTTPGetResult, error) {
+	target := device.HTTPURL
+	if target == "" {
+		target = device.Host
+	}
+	return executeHTTPGet(userID, &device, model.HTTPGetRequest{
+		URL:     target,
+		Timeout: device.HTTPTimeout,
+	})
+}
+
+func executeHTTPGet(userID string, device *model.Device, req model.HTTPGetRequest) (*model.HTTPGetResult, error) {
 	targetURL, err := normalizeHTTPGetURL(req.URL)
 	if err != nil {
 		return nil, err
@@ -48,27 +62,27 @@ func ExecuteHTTPGet(userID string, req model.HTTPGetRequest) (*model.HTTPGetResu
 	result.Duration = time.Since(start).Milliseconds()
 	if err != nil {
 		result.Error = err.Error()
-		logHTTPGet(userID, result, false)
+		logHTTPGet(userID, device, result, false)
 		return result, nil
 	}
 	defer resp.Body.Close()
 
+	body, truncated, readErr := readHTTPBody(resp.Body)
+	result.Duration = time.Since(start).Milliseconds()
 	result.StatusCode = resp.StatusCode
 	result.Status = resp.Status
 	result.ContentType = resp.Header.Get("Content-Type")
 	result.Headers = flattenHTTPHeaders(resp.Header)
-	result.IsUp = resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusBadRequest
-
-	body, truncated, err := readHTTPBody(resp.Body)
+	result.IsUp = isHTTPUp(resp.StatusCode)
 	result.Body = body
 	result.BodyTruncated = truncated
-	if err != nil {
-		result.Error = err.Error()
-		logHTTPGet(userID, result, false)
+	if readErr != nil {
+		result.Error = readErr.Error()
+		logHTTPGet(userID, device, result, false)
 		return result, nil
 	}
 
-	logHTTPGet(userID, result, result.IsUp)
+	logHTTPGet(userID, device, result, result.IsUp)
 	return result, nil
 }
 
@@ -126,7 +140,63 @@ func flattenHTTPHeaders(headers http.Header) map[string]string {
 	return result
 }
 
-func logHTTPGet(userID string, result *model.HTTPGetResult, success bool) {
+func logHTTPGet(userID string, device *model.Device, result *model.HTTPGetResult, success bool) {
+	deviceID := ""
+	status := model.DeviceStatusDown
+	if device != nil {
+		deviceID = device.ID
+	}
+	if result != nil && result.StatusCode > 0 {
+		success = true
+		status = httpStatus(device, result)
+	}
+
 	resultJSON, _ := json.Marshal(result)
-	_ = repository.InsertNetworkLog(userID, "http", result.URL, string(resultJSON), success, result.Duration)
+	_ = repository.InsertNetworkLogEntry(model.NetworkLog{
+		UserID:       userID,
+		DeviceID:     deviceID,
+		Action:       "http",
+		Target:       result.URL,
+		Result:       string(resultJSON),
+		Success:      success,
+		Duration:     result.Duration,
+		ResponseTime: result.Duration,
+		Status:       monitorStatusLabel(status),
+	})
+}
+
+func httpStatus(device *model.Device, result *model.HTTPGetResult) model.DeviceStatus {
+	if result == nil || result.StatusCode == 0 {
+		return model.DeviceStatusCritical
+	}
+	if result.StatusCode >= http.StatusInternalServerError {
+		return model.DeviceStatusWarning
+	}
+
+	warning := 1000.0
+	critical := 3000.0
+	if device != nil {
+		warning = device.ResponseTimeWarningMs
+		critical = device.ResponseTimeCriticalMs
+	}
+
+	responseTime := float64(result.Duration)
+	if responseTime >= critical {
+		return model.DeviceStatusCritical
+	}
+	if responseTime >= warning {
+		return model.DeviceStatusWarning
+	}
+	return model.DeviceStatusHealthy
+}
+
+func isHTTPUp(statusCode int) bool {
+	return statusCode >= http.StatusOK && statusCode < http.StatusInternalServerError
+}
+
+func monitorStatusLabel(status model.DeviceStatus) string {
+	if status == model.DeviceStatusHealthy {
+		return "up"
+	}
+	return string(status)
 }

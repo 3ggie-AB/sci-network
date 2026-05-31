@@ -45,8 +45,20 @@ func CreateUser(req model.CreateUserRequest) (*model.User, error) {
 }
 
 func GetUserByID(id string) (*model.User, error) {
+	return getUserByID(id, true)
+}
+
+func GetUserByIDAnyStatus(id string) (*model.User, error) {
+	return getUserByID(id, false)
+}
+
+func getUserByID(id string, activeOnly bool) (*model.User, error) {
 	user := &model.User{}
-	err := MySQL.Get(user, `SELECT * FROM users WHERE id = ? AND is_active = 1`, id)
+	query := `SELECT * FROM users WHERE id = ?`
+	if activeOnly {
+		query += ` AND is_active = 1`
+	}
+	err := MySQL.Get(user, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("user not found")
@@ -136,7 +148,7 @@ func UpdateUser(id string, req model.UpdateUserRequest) (*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return GetUserByID(id)
+	return GetUserByIDAnyStatus(id)
 }
 
 func DeleteUser(id string) error {

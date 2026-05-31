@@ -75,6 +75,56 @@ func SetupRoutes(app *fiber.App) {
 		DeleteFeedback,
 	)
 
+	// ─── Device Management / Monitor Targets ─────────────────────────────────
+	devices := protected.Group("/devices")
+	devices.Get("/",
+		middleware.RequirePermission(model.PermDeviceRead),
+		ListDevices,
+	)
+	devices.Get("/:id",
+		middleware.RequirePermission(model.PermDeviceRead),
+		GetDevice,
+	)
+	devices.Post("/",
+		middleware.RequirePermission(model.PermDeviceManage),
+		CreateDevice,
+	)
+	devices.Put("/:id",
+		middleware.RequirePermission(model.PermDeviceManage),
+		UpdateDevice,
+	)
+	devices.Delete("/:id",
+		middleware.RequirePermission(model.PermDeviceManage),
+		DeleteDevice,
+	)
+
+	// ─── Alerting ─────────────────────────────────────────────────────────────
+	alerts := protected.Group("/alerts")
+	alerts.Get("/",
+		middleware.RequirePermission(model.PermAlertRead),
+		ListAlerts,
+	)
+	alerts.Get("/:id",
+		middleware.RequirePermission(model.PermAlertRead),
+		GetAlert,
+	)
+	alerts.Post("/:id/ack",
+		middleware.RequirePermission(model.PermAlertManage),
+		AcknowledgeAlert,
+	)
+	alerts.Post("/:id/resolve",
+		middleware.RequirePermission(model.PermAlertManage),
+		ResolveAlert,
+	)
+	alerts.Put("/:id/notes",
+		middleware.RequirePermission(model.PermAlertManage),
+		UpdateAlertNotes,
+	)
+	alerts.Delete("/:id",
+		middleware.RequirePermission(model.PermAlertManage),
+		DeleteAlert,
+	)
+
 	// ─── Network Tools ────────────────────────────────────────────────────────
 	net := protected.Group("/network")
 	net.Post("/ping",
@@ -97,8 +147,36 @@ func SetupRoutes(app *fiber.App) {
 		middleware.RequirePermission(model.PermPing),
 		NetworkLogs,
 	)
+	net.Delete("/logs",
+		middleware.RequirePermission(model.PermLogManage),
+		ClearNetworkLogs,
+	)
+	net.Get("/monitor-targets",
+		middleware.RequirePermission(model.PermDeviceRead),
+		MonitorTargets,
+	)
+	net.Get("/scheduler/status",
+		middleware.RequirePermission(model.PermReportRead),
+		MonitorSchedulerStatus,
+	)
 	net.Get("/stats",
 		middleware.RequirePermission(model.PermReportRead),
 		NetworkStats,
+	)
+	net.Get("/device-history",
+		middleware.RequirePermission(model.PermReportRead),
+		NetworkDeviceHistory,
+	)
+	net.Get("/interfaces",
+		middleware.RequirePermission(model.PermReportRead),
+		NetworkInterfaces,
+	)
+	net.Post("/interfaces/check",
+		middleware.RequirePermission(model.PermReportRead),
+		CheckNetworkInterfaces,
+	)
+	net.Get("/interfaces/:name",
+		middleware.RequirePermission(model.PermReportRead),
+		NetworkInterface,
 	)
 }

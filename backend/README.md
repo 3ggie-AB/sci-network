@@ -1,6 +1,6 @@
 # NetMon - Network Monitoring API
 
-Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, HTTP GET checker, manajemen user RBAC, dan umpan balik/keluhan.
+Sistem monitoring jaringan berbasis Go dengan fitur scheduler monitoring, device management, alerting, Ping/ICMP, SNMP, HTTP GET checker, manajemen user RBAC, dan umpan balik/keluhan.
 
 ## 🏗️ Tech Stack
 
@@ -10,7 +10,7 @@ Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, HTTP GET ch
 | DB Utama   | MySQL 8.0 (user, feedback)          |
 | DB Analitik| ClickHouse (log jaringan)           |
 | Auth       | JWT (HS256, expire 24 jam)          |
-| Monitoring | ICMP Ping + SNMP v1/v2c/v3 + HTTP GET |
+| Monitoring | Scheduler + ICMP Ping + SNMP v1/v2c/v3 + HTTP GET |
 
 ---
 
@@ -21,6 +21,11 @@ Sistem monitoring jaringan berbasis Go dengan fitur Ping/ICMP, SNMP, HTTP GET ch
 | ping:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
 | snmp:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
 | http:execute        | ✅    | ✅     | ✅      | ❌    | ❌       |
+| device:read         | ✅    | ✅     | ✅      | ❌    | ❌       |
+| device:manage       | ✅    | ❌     | ✅      | ❌    | ❌       |
+| alert:read          | ✅    | ✅     | ✅      | ❌    | ❌       |
+| alert:manage        | ✅    | ✅     | ❌      | ❌    | ❌       |
+| log:manage          | ✅    | ❌     | ❌      | ❌    | ❌       |
 | user:create         | ✅    | ❌     | ❌      | ❌    | ❌       |
 | user:read           | ✅    | ✅     | ❌      | ❌    | ❌       |
 | user:update         | ✅    | ❌     | ❌      | ❌    | ❌       |
@@ -133,6 +138,44 @@ PUT  /api/feedbacks/:id
 DELETE /api/feedbacks/:id
 ```
 
+### Device Management / Monitor Target
+
+```http
+GET    /api/devices?page=1&type=mikrotik&monitor_enabled=true
+GET    /api/devices/:id
+POST   /api/devices
+PUT    /api/devices/:id
+DELETE /api/devices/:id
+
+POST /api/devices
+{
+  "name": "Router Utama",
+  "host": "192.168.1.1",
+  "type": "mikrotik",
+  "snmp_version": "v2c",
+  "monitor_enabled": true,
+  "ping_enabled": true,
+  "snmp_enabled": true,
+  "ping_interval_seconds": 60,
+  "snmp_interval_seconds": 300,
+  "http_interval_seconds": 120,
+  "packet_loss_critical": 20
+}
+```
+
+### Alerting
+
+```http
+GET  /api/alerts?status=open&severity=critical
+GET  /api/alerts/:id
+POST /api/alerts/:id/ack
+POST /api/alerts/:id/resolve
+PUT  /api/alerts/:id/notes
+DELETE /api/alerts/:id
+```
+
+Alert dibuat otomatis oleh scheduler saat threshold seperti `packet_loss`, `latency`, `response_time`, atau availability melewati batas device. Notifikasi Telegram, email, atau webhook/WhatsApp aktif jika env terkait diisi.
+
 ### Network Tools
 
 ```http
@@ -141,6 +184,11 @@ POST /api/network/ping
 {
   "host": "8.8.8.8",
   "count": 4
+}
+
+POST /api/network/ping
+{
+  "device_id": "<device_id>"
 }
 
 # SNMP GET
@@ -168,10 +216,21 @@ POST /api/network/http-get
 GET /api/network/snmp/oids
 
 # Log jaringan
-GET /api/network/logs?page=1&limit=50&action=http
+GET /api/network/logs?page=1&limit=50&action=http&device_id=<device_id>&status=critical
+DELETE /api/network/logs
+
+# Monitor targets & scheduler
+GET /api/network/monitor-targets
+GET /api/network/scheduler/status
+
+# Local interface agent
+GET  /api/network/interfaces
+GET  /api/network/interfaces/:name
+POST /api/network/interfaces/check
 
 # Statistik (Admin/Atasan)
 GET /api/network/stats
+GET /api/network/device-history?range=24h&device_id=<device_id>
 ```
 
 ---
@@ -190,6 +249,19 @@ GET /api/network/stats
 | `MYSQL_DBNAME`              | `netmon`           | Database MySQL           |
 | `CLICKHOUSE_HOST`           | `localhost`        | Host ClickHouse          |
 | `CLICKHOUSE_PORT`           | `9000`             | Port ClickHouse          |
+| `MONITOR_SCHEDULER_ENABLED` | `true`             | Aktifkan scheduler       |
+| `MONITOR_INTERVAL_SECONDS`  | `10`               | Resolusi scan scheduler; set <= interval probe terkecil |
+| `LOCAL_INTERFACE_MONITOR_ENABLED` | `true`       | Scan Ethernet/WiFi lokal |
+| `LOCAL_INTERFACE_NAMES`     | -                  | Opsional, contoh `enp3s0,wlp2s0` |
+| `ALERT_WEBHOOK_URL`         | -                  | Webhook WA/custom        |
+| `ALERT_TELEGRAM_BOT_TOKEN`  | -                  | Token bot Telegram       |
+| `ALERT_TELEGRAM_CHAT_ID`    | -                  | Chat ID Telegram         |
+| `ALERT_EMAIL_SMTP_HOST`     | -                  | SMTP host email alert    |
+| `ALERT_EMAIL_SMTP_PORT`     | `587`              | SMTP port email alert    |
+| `ALERT_EMAIL_USERNAME`      | -                  | SMTP username            |
+| `ALERT_EMAIL_PASSWORD`      | -                  | SMTP password            |
+| `ALERT_EMAIL_FROM`          | -                  | Sender email             |
+| `ALERT_EMAIL_TO`            | -                  | Recipient email          |
 | `DEFAULT_ADMIN_USERNAME`    | `admin`            | Username admin default   |
 | `DEFAULT_ADMIN_PASSWORD`    | `Admin@123!`       | Password admin default   |
 | *(+ default user lainnya)*  |                    |                          |
@@ -221,11 +293,12 @@ netmon/
 │   │   ├── db.go            # Koneksi MySQL & ClickHouse
 │   │   ├── user_repo.go     # Query user (MySQL)
 │   │   ├── feedback_repo.go # Query feedback (MySQL)
+│   │   ├── device_repo.go   # Query device/monitor target
+│   │   ├── alert_repo.go    # Query alert
 │   │   └── network_log_repo.go # Query log (ClickHouse)
 │   └── service/
-│       ├── ping_service.go  # ICMP ping logic
-│       ├── snmp_service.go  # SNMP GET logic
-│       ├── http_service.go  # HTTP GET checker logic
+│       ├── monitor/         # Ping/SNMP/HTTP checker + scheduler
+│       ├── alert/           # Threshold evaluator + notifier
 │       └── seeder.go        # Default user seeder
 ├── migrations/
 │   ├── mysql.sql            # DDL MySQL

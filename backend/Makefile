@@ -7,11 +7,11 @@ BUILD_DIR = ./bin
 # ── Dev ─────────────────────────────────────────────────────────────────────────
 run:
 	@echo "▶ Running $(APP_NAME)..."
-	@go run ./cmd/main.go
+	@go run .
 
 build:
 	@echo "▶ Building $(APP_NAME)..."
-	@go build -ldflags="-s -w" -o $(BUILD_DIR)/$(APP_NAME) ./cmd/main.go
+	@go build -ldflags="-s -w" -o $(BUILD_DIR)/$(APP_NAME) .
 	@echo "✓ Build selesai: $(BUILD_DIR)/$(APP_NAME)"
 
 tidy:
@@ -25,7 +25,7 @@ migrate-mysql:
 
 migrate-ch:
 	@echo "▶ Running ClickHouse migration..."
-	@clickhouse-client --host=$(CLICKHOUSE_HOST) --query="$$(cat migrations/clickhouse.sql)"
+	@clickhouse-client --host=$(CLICKHOUSE_HOST) --multiquery --query="$$(cat migrations/clickhouse.sql)"
 	@echo "✓ ClickHouse migration selesai"
 
 # ── Docker ───────────────────────────────────────────────────────────────────────

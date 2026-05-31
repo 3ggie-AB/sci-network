@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/yourorg/netmon/internal/handler"
 	"github.com/yourorg/netmon/internal/repository"
 	"github.com/yourorg/netmon/internal/service"
+	"github.com/yourorg/netmon/internal/service/monitor"
 )
 
 func main() {
@@ -26,7 +28,7 @@ func main() {
 
 	log.Printf("╔══════════════════════════════════════╗")
 	log.Printf("║         NetMon API Starting          ║")
-	log.Printf("║  Env: %-30s║", cfg.AppEnv)
+	log.Printf("║          Env: %-22s ║", cfg.AppEnv)
 	log.Printf("╚══════════════════════════════════════╝")
 
 	// ── 2. Init Database ──────────────────────────────────────────────────────
@@ -36,7 +38,13 @@ func main() {
 	// ── 3. Seed Default Users ─────────────────────────────────────────────────
 	service.SeedDefaultUsers()
 
-	// ── 4. Setup Fiber App ────────────────────────────────────────────────────
+	// ── 4. Start Monitoring Scheduler ─────────────────────────────────────────
+	schedulerCtx, cancelScheduler := context.WithCancel(context.Background())
+	scheduler := monitor.NewScheduler(cfg.MonitorSchedulerEnabled, cfg.MonitorIntervalSeconds)
+	monitor.SetDefaultScheduler(scheduler)
+	scheduler.Start(schedulerCtx)
+
+	// ── 5. Setup Fiber App ────────────────────────────────────────────────────
 	app := fiber.New(fiber.Config{
 		AppName:      "NetMon API v1.0",
 		ReadTimeout:  30 * time.Second,
@@ -52,7 +60,7 @@ func main() {
 		},
 	})
 
-	// ── 5. Global Middleware ──────────────────────────────────────────────────
+	// ── 6. Global Middleware ──────────────────────────────────────────────────
 	app.Use(recover.New())
 
 	app.Use(logger.New(logger.Config{
@@ -80,7 +88,7 @@ func main() {
 		},
 	}))
 
-	// ── 6. Register Routes ────────────────────────────────────────────────────
+	// ── 7. Register Routes ────────────────────────────────────────────────────
 	handler.SetupRoutes(app)
 
 	// 404 handler
@@ -90,7 +98,7 @@ func main() {
 		})
 	})
 
-	// ── 7. Start Server (graceful shutdown) ───────────────────────────────────
+	// ── 8. Start Server (graceful shutdown) ───────────────────────────────────
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
@@ -104,6 +112,8 @@ func main() {
 
 	<-quit
 	log.Println("[APP] Shutting down gracefully...")
+	cancelScheduler()
+	scheduler.Stop()
 
 	if err := app.Shutdown(); err != nil {
 		log.Fatalf("[APP] Shutdown error: %v", err)

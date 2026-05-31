@@ -3,14 +3,15 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	AppPort    string
-	AppEnv     string
-	JWTSecret  string
+	AppPort   string
+	AppEnv    string
+	JWTSecret string
 
 	MySQLHost     string
 	MySQLPort     string
@@ -23,6 +24,21 @@ type Config struct {
 	ClickHouseUser     string
 	ClickHousePassword string
 	ClickHouseDBName   string
+
+	MonitorSchedulerEnabled      bool
+	MonitorIntervalSeconds       int
+	LocalInterfaceMonitorEnabled bool
+	LocalInterfaceNames          string
+
+	AlertWebhookURL       string
+	AlertTelegramBotToken string
+	AlertTelegramChatID   string
+	AlertEmailSMTPHost    string
+	AlertEmailSMTPPort    string
+	AlertEmailUsername    string
+	AlertEmailPassword    string
+	AlertEmailFrom        string
+	AlertEmailTo          string
 
 	// Default users
 	DefaultAdminUsername string
@@ -70,6 +86,21 @@ func Load() {
 		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", ""),
 		ClickHouseDBName:   getEnv("CLICKHOUSE_DBNAME", "netmon"),
 
+		MonitorSchedulerEnabled:      getEnvBool("MONITOR_SCHEDULER_ENABLED", true),
+		MonitorIntervalSeconds:       getEnvInt("MONITOR_INTERVAL_SECONDS", 10),
+		LocalInterfaceMonitorEnabled: getEnvBool("LOCAL_INTERFACE_MONITOR_ENABLED", true),
+		LocalInterfaceNames:          getEnv("LOCAL_INTERFACE_NAMES", ""),
+
+		AlertWebhookURL:       getEnv("ALERT_WEBHOOK_URL", ""),
+		AlertTelegramBotToken: getEnv("ALERT_TELEGRAM_BOT_TOKEN", ""),
+		AlertTelegramChatID:   getEnv("ALERT_TELEGRAM_CHAT_ID", ""),
+		AlertEmailSMTPHost:    getEnv("ALERT_EMAIL_SMTP_HOST", ""),
+		AlertEmailSMTPPort:    getEnv("ALERT_EMAIL_SMTP_PORT", "587"),
+		AlertEmailUsername:    getEnv("ALERT_EMAIL_USERNAME", ""),
+		AlertEmailPassword:    getEnv("ALERT_EMAIL_PASSWORD", ""),
+		AlertEmailFrom:        getEnv("ALERT_EMAIL_FROM", ""),
+		AlertEmailTo:          getEnv("ALERT_EMAIL_TO", ""),
+
 		DefaultAdminUsername: getEnv("DEFAULT_ADMIN_USERNAME", "admin"),
 		DefaultAdminEmail:    getEnv("DEFAULT_ADMIN_EMAIL", "admin@netmon.local"),
 		DefaultAdminPassword: getEnv("DEFAULT_ADMIN_PASSWORD", "Admin@123!"),
@@ -97,4 +128,30 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+func getEnvBool(key string, defaultVal bool) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+
+	parsed, err := strconv.ParseBool(val)
+	if err != nil {
+		return defaultVal
+	}
+	return parsed
+}
+
+func getEnvInt(key string, defaultVal int) int {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+
+	parsed, err := strconv.Atoi(val)
+	if err != nil {
+		return defaultVal
+	}
+	return parsed
 }

@@ -35,6 +35,9 @@ func InitMySQL() {
 	if err = db.Ping(); err != nil {
 		log.Fatalf("[MYSQL] Ping failed: %v", err)
 	}
+	if err = ensureMySQLSchemaPatches(db, cfg); err != nil {
+		log.Fatalf("[MYSQL] Schema patch failed: %v", err)
+	}
 
 	MySQL = db
 	log.Println("[MYSQL] Connected successfully")
@@ -102,6 +105,90 @@ func ensureClickHouseDatabase(cfg *config.Config) error {
 	}
 
 	return conn.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName))
+}
+
+func ensureMySQLSchemaPatches(db *sqlx.DB, cfg *config.Config) error {
+	hasAlerts, err := mysqlTableExists(db, cfg.MySQLDBName, "alerts")
+	if err != nil {
+		return err
+	}
+	if hasAlerts {
+		if _, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "alerts", "notes", `TEXT NULL AFTER message`); err != nil {
+			return err
+		}
+	}
+
+	hasDevices, err := mysqlTableExists(db, cfg.MySQLDBName, "devices")
+	if err != nil {
+		return err
+	}
+	if hasDevices {
+		if added, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "ping_interval_seconds", `INT NOT NULL DEFAULT 60 AFTER check_interval_seconds`); err != nil {
+			return err
+		} else if added {
+			if _, err := db.Exec(`UPDATE devices SET ping_interval_seconds = check_interval_seconds`); err != nil {
+				return err
+			}
+		}
+		if added, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "snmp_interval_seconds", `INT NOT NULL DEFAULT 60 AFTER ping_interval_seconds`); err != nil {
+			return err
+		} else if added {
+			if _, err := db.Exec(`UPDATE devices SET snmp_interval_seconds = check_interval_seconds`); err != nil {
+				return err
+			}
+		}
+		if added, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "http_interval_seconds", `INT NOT NULL DEFAULT 60 AFTER snmp_interval_seconds`); err != nil {
+			return err
+		} else if added {
+			if _, err := db.Exec(`UPDATE devices SET http_interval_seconds = check_interval_seconds`); err != nil {
+				return err
+			}
+		}
+		if _, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "last_ping_checked_at", `DATETIME NULL AFTER last_checked_at`); err != nil {
+			return err
+		}
+		if _, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "last_snmp_checked_at", `DATETIME NULL AFTER last_ping_checked_at`); err != nil {
+			return err
+		}
+		if _, err := addMySQLColumnIfMissing(db, cfg.MySQLDBName, "devices", "last_http_checked_at", `DATETIME NULL AFTER last_snmp_checked_at`); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addMySQLColumnIfMissing(db *sqlx.DB, schema, table, column, definition string) (bool, error) {
+	exists, err := mysqlColumnExists(db, schema, table, column)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		return false, nil
+	}
+	_, err = db.Exec(fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, table, column, definition))
+	return err == nil, err
+}
+
+func mysqlTableExists(db *sqlx.DB, schema, table string) (bool, error) {
+	var count int
+	err := db.Get(&count, `
+		SELECT COUNT(*)
+		FROM information_schema.TABLES
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+		schema, table,
+	)
+	return count > 0, err
+}
+
+func mysqlColumnExists(db *sqlx.DB, schema, table, column string) (bool, error) {
+	var count int
+	err := db.Get(&count, `
+		SELECT COUNT(*)
+		FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+		schema, table, column,
+	)
+	return count > 0, err
 }
 
 func mysqlDSN(cfg *config.Config, database string) string {
