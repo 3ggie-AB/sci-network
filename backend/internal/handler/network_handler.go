@@ -149,6 +149,7 @@ func NetworkLogs(c *fiber.Ctx) error {
 	action := c.Query("action", "")
 	deviceID := c.Query("device_id", "")
 	status := c.Query("status", "")
+	search := c.Query("q", c.Query("search", ""))
 
 	// Teknisi & staff bisa lihat semua; karyawan hanya miliknya
 	userID := ""
@@ -156,11 +157,12 @@ func NetworkLogs(c *fiber.Ctx) error {
 		userID = claims.UserID
 	}
 
-	logs, err := repository.ListNetworkLogs(repository.NetworkLogFilter{
+	logs, total, err := repository.ListNetworkLogs(repository.NetworkLogFilter{
 		UserID:   userID,
 		DeviceID: deviceID,
 		Action:   action,
 		Status:   status,
+		Search:   search,
 		Page:     page,
 		Limit:    limit,
 	})
@@ -170,7 +172,15 @@ func NetworkLogs(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(fiber.Map{"data": logs})
+	return c.JSON(fiber.Map{
+		"data": logs,
+		"meta": fiber.Map{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+			"pages": (total + int64(limit) - 1) / int64(limit),
+		},
+	})
 }
 
 // DELETE /api/network/logs

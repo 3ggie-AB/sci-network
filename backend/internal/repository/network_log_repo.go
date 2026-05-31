@@ -75,6 +75,7 @@ type NetworkLogFilter struct {
 	DeviceID  string
 	Action    string
 	Status    string
+	Search    string
 	StartTime *time.Time
 	EndTime   *time.Time
 	Page      int
@@ -110,7 +111,7 @@ type NetworkDeviceHistoryPoint struct {
 	Incidents         int64     `json:"incidents"`
 }
 
-func ListNetworkLogs(f NetworkLogFilter) ([]model.NetworkLog, error) {
+func ListNetworkLogs(f NetworkLogFilter) ([]model.NetworkLog, int64, error) {
 	ctx := context.Background()
 	if f.Page < 1 {
 		f.Page = 1
@@ -126,40 +127,20 @@ func ListNetworkLogs(f NetworkLogFilter) ([]model.NetworkLog, error) {
 			latency, packet_loss, jitter, response_time, status, cpu, memory,
 			bandwidth_in, bandwidth_out, created_at
 		FROM network_logs
-		WHERE 1=1`
-	args := []interface{}{}
+		`
+	where, args := networkLogWhere(f)
 
-	if f.UserID != "" {
-		query += ` AND user_id = ?`
-		args = append(args, f.UserID)
-	}
-	if f.DeviceID != "" {
-		query += ` AND device_id = ?`
-		args = append(args, f.DeviceID)
-	}
-	if f.Action != "" {
-		query += ` AND action = ?`
-		args = append(args, f.Action)
-	}
-	if f.Status != "" {
-		query += ` AND status = ?`
-		args = append(args, f.Status)
-	}
-	if f.StartTime != nil {
-		query += ` AND created_at >= ?`
-		args = append(args, *f.StartTime)
-	}
-	if f.EndTime != nil {
-		query += ` AND created_at <= ?`
-		args = append(args, *f.EndTime)
+	var total int64
+	if err := ClickHouse.QueryRow(ctx, `SELECT toInt64(count()) FROM network_logs `+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
 	}
 
-	query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
-	args = append(args, f.Limit, offset)
+	query += where + ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	queryArgs := append(append([]interface{}{}, args...), f.Limit, offset)
 
-	rows, err := ClickHouse.Query(ctx, query, args...)
+	rows, err := ClickHouse.Query(ctx, query, queryArgs...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -171,11 +152,54 @@ func ListNetworkLogs(f NetworkLogFilter) ([]model.NetworkLog, error) {
 			&l.Latency, &l.PacketLoss, &l.Jitter, &l.ResponseTime, &l.Status, &l.CPU, &l.Memory,
 			&l.BandwidthIn, &l.BandwidthOut, &l.CreatedAt,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		logs = append(logs, l)
 	}
-	return logs, nil
+	return logs, total, rows.Err()
+}
+
+func networkLogWhere(f NetworkLogFilter) (string, []interface{}) {
+	where := `WHERE 1=1`
+	args := []interface{}{}
+
+	if f.UserID != "" {
+		where += ` AND user_id = ?`
+		args = append(args, f.UserID)
+	}
+	if f.DeviceID != "" {
+		where += ` AND device_id = ?`
+		args = append(args, f.DeviceID)
+	}
+	if f.Action != "" {
+		where += ` AND action = ?`
+		args = append(args, f.Action)
+	}
+	if f.Status != "" {
+		where += ` AND status = ?`
+		args = append(args, f.Status)
+	}
+	if f.Search != "" {
+		where += `
+			AND (
+				positionCaseInsensitiveUTF8(target, ?) > 0 OR
+				positionCaseInsensitiveUTF8(result, ?) > 0 OR
+				positionCaseInsensitiveUTF8(action, ?) > 0 OR
+				positionCaseInsensitiveUTF8(status, ?) > 0 OR
+				positionCaseInsensitiveUTF8(device_id, ?) > 0
+			)`
+		args = append(args, f.Search, f.Search, f.Search, f.Search, f.Search)
+	}
+	if f.StartTime != nil {
+		where += ` AND created_at >= ?`
+		args = append(args, *f.StartTime)
+	}
+	if f.EndTime != nil {
+		where += ` AND created_at <= ?`
+		args = append(args, *f.EndTime)
+	}
+
+	return where, args
 }
 
 func ClearNetworkLogs() error {

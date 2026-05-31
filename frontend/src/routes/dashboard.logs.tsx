@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/DashboardLayout";
@@ -18,6 +18,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -44,12 +52,29 @@ type LogRow = {
   result?: string;
 };
 
+type LogMeta = {
+  total?: number;
+  page?: number;
+  limit?: number;
+  pages?: number;
+};
+
+const actions = ["all", "ping", "snmp", "http", "interface"];
+const statuses = ["all", "up", "warning", "critical", "down", "error", "unknown"];
+const limits = [10, 25, 50, 100];
+
 function Logs() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<LogRow | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState("");
+  const [action, setAction] = useState("all");
+  const [status, setStatus] = useState("all");
   const list = useQuery({
-    queryKey: ["network", "logs"],
-    queryFn: () => api<unknown>("/api/network/logs?page=1&limit=50"),
+    queryKey: ["network", "logs", page, limit, query, action, status],
+    queryFn: () => api<unknown>(logsURL({ page, limit, query, action, status })),
     refetchInterval: 20_000,
   });
 
@@ -64,6 +89,25 @@ function Logs() {
   });
 
   const items = asArray<LogRow>(list.data);
+  const meta = logMeta(list.data);
+  const total = Number(meta.total ?? items.length);
+  const pages = Math.max(1, Number(meta.pages ?? 1));
+  const canPrev = page > 1 && !list.isFetching;
+  const canNext = page < pages && !list.isFetching;
+
+  function applySearch() {
+    setPage(1);
+    setQuery(searchText.trim());
+  }
+
+  function resetFilters() {
+    setPage(1);
+    setSearchText("");
+    setQuery("");
+    setAction("all");
+    setStatus("all");
+    setLimit(50);
+  }
 
   return (
     <>
@@ -97,6 +141,82 @@ function Logs() {
           </AlertDialog>
         }
       />
+      <div className="mb-4 rounded-xl border border-border bg-card/70 p-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_150px_150px_120px_auto]">
+          <div className="flex gap-2">
+            <Input
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applySearch();
+              }}
+              placeholder="Cari target, status, action, device_id, atau isi JSON..."
+            />
+            <Button variant="secondary" onClick={applySearch} disabled={list.isFetching}>
+              <Search className="mr-2 h-4 w-4" />
+              Search
+            </Button>
+          </div>
+          <Select
+            value={action}
+            onValueChange={(value) => {
+              setPage(1);
+              setAction(value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Action" />
+            </SelectTrigger>
+            <SelectContent>
+              {actions.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item === "all" ? "All actions" : item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              setPage(1);
+              setStatus(value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statuses.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item === "all" ? "All status" : item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={String(limit)}
+            onValueChange={(value) => {
+              setPage(1);
+              setLimit(Number(value));
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Limit" />
+            </SelectTrigger>
+            <SelectContent>
+              {limits.map((item) => (
+                <SelectItem key={item} value={String(item)}>
+                  {item} rows
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={resetFilters} disabled={list.isFetching}>
+            Reset
+          </Button>
+        </div>
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-border bg-card/70">
         <Table>
           <TableHeader>
@@ -160,6 +280,33 @@ function Logs() {
         </Table>
       </div>
 
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="font-mono text-xs text-muted-foreground">
+          Showing {items.length} of {total.toLocaleString()} logs · page {page} / {pages}
+          {list.isFetching ? " · refreshing" : ""}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!canPrev}
+            onClick={() => setPage(page - 1)}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Prev
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!canNext}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -172,6 +319,33 @@ function Logs() {
       </Dialog>
     </>
   );
+}
+
+function logsURL({
+  page,
+  limit,
+  query,
+  action,
+  status,
+}: {
+  page: number;
+  limit: number;
+  query: string;
+  action: string;
+  status: string;
+}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (query) params.set("q", query);
+  if (action !== "all") params.set("action", action);
+  if (status !== "all") params.set("status", status);
+  return `/api/network/logs?${params.toString()}`;
+}
+
+function logMeta(response: unknown): LogMeta {
+  if (typeof response !== "object" || response === null || !("meta" in response)) return {};
+  const meta = (response as { meta?: unknown }).meta;
+  if (typeof meta !== "object" || meta === null) return {};
+  return meta as LogMeta;
 }
 
 function formatLogDetail(log: LogRow) {

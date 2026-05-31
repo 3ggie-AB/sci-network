@@ -216,7 +216,7 @@ POST /api/network/http-get
 GET /api/network/snmp/oids
 
 # Log jaringan
-GET /api/network/logs?page=1&limit=50&action=http&device_id=<device_id>&status=critical
+GET /api/network/logs?page=1&limit=50&q=cloudflare&action=http&device_id=<device_id>&status=critical
 DELETE /api/network/logs
 
 # Monitor targets & scheduler
