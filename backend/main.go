@@ -27,7 +27,7 @@ func main() {
 	cfg := config.App
 
 	log.Printf("╔══════════════════════════════════════╗")
-	log.Printf("║         NetMon API Starting          ║")
+	log.Printf("║       SCINetwork API Starting        ║")
 	log.Printf("║          Env: %-22s ║", cfg.AppEnv)
 	log.Printf("╚══════════════════════════════════════╝")
 
@@ -46,7 +46,7 @@ func main() {
 
 	// ── 5. Setup Fiber App ────────────────────────────────────────────────────
 	app := fiber.New(fiber.Config{
-		AppName:      "NetMon API v1.0",
+		AppName:      "SCINetwork API v1.0",
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {

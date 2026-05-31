@@ -12,8 +12,8 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Register — NetMonitor" },
-      { name: "description", content: "Create a NetMonitor account." },
+      { title: "Register — SCINetwork" },
+      { name: "description", content: "Create a SCINetwork account." },
     ],
   }),
   component: RegisterPage,
@@ -36,8 +36,8 @@ function RegisterPage() {
       await register(form);
       toast.success("Account created. Please login.");
       nav({ to: "/login" });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Registration failed");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -50,13 +50,34 @@ function RegisterPage() {
         <Link to="/" className="font-mono text-xs text-muted-foreground hover:text-foreground">
           ← back
         </Link>
+        <img
+          src="/logo.png"
+          alt="SCINetwork logo"
+          className="mt-4 h-12 w-12 rounded-md object-contain"
+        />
         <h1 className="mt-3 text-2xl font-bold tracking-tight">Create account</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Daftar untuk akses NetMonitor.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Daftar untuk akses SCINetwork.</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <Field label="Full name" id="full_name" value={form.full_name} onChange={(v) => set("full_name", v)} />
-          <Field label="Username" id="username" value={form.username} onChange={(v) => set("username", v)} />
-          <Field label="Email" id="email" type="email" value={form.email} onChange={(v) => set("email", v)} />
+          <Field
+            label="Full name"
+            id="full_name"
+            value={form.full_name}
+            onChange={(v) => set("full_name", v)}
+          />
+          <Field
+            label="Username"
+            id="username"
+            value={form.username}
+            onChange={(v) => set("username", v)}
+          />
+          <Field
+            label="Email"
+            id="email"
+            type="email"
+            value={form.email}
+            onChange={(v) => set("email", v)}
+          />
           <Field
             label="Password"
             id="password"
@@ -65,7 +86,11 @@ function RegisterPage() {
             onChange={(v) => set("password", v)}
           />
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <UserPlus className="mr-2 h-4 w-4" />
+            )}
             Register
           </Button>
         </form>
@@ -97,7 +122,13 @@ function Field({
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type={type} value={value} onChange={(e) => onChange(e.target.value)} required />
+      <Input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      />
     </div>
   );
 }

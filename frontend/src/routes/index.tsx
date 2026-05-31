@@ -19,7 +19,7 @@ import { API_BASE_URL, pingBackend } from "@/lib/api";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NetMonitor API — Observability Dashboard" },
+      { title: "SCINetwork — Observability Dashboard" },
       {
         name: "description",
         content:
@@ -53,19 +53,19 @@ function Landing() {
   const cards: StatusCard[] = [
     {
       label: "SERVICE",
-      value: "NetMonitor API",
+      value: "SCINetwork API",
       status: online === null ? "unknown" : online ? "online" : "offline",
       icon: Server,
     },
     {
       label: "MYSQL",
-      value: "netmonitor",
+      value: "scinetwork",
       status: online === null ? "unknown" : online ? "online" : "unavailable",
       icon: Database,
     },
     {
       label: "STACK",
-      value: "fiber + gorm + mysql",
+      value: "fiber + mysql",
       status: online === null ? "unknown" : online ? "online" : "offline",
       icon: Radio,
     },
@@ -87,18 +87,22 @@ function Landing() {
         <div className="flex items-center gap-3">
           <Logo />
           <div className="leading-tight">
-            <div className="text-lg font-semibold tracking-tight">NetMonitor</div>
-            <div className="font-mono text-xs text-muted-foreground">
-              Go Fiber + GORM + MySQL
-            </div>
+            <div className="text-lg font-semibold tracking-tight">SCINetwork</div>
+            <div className="font-mono text-xs text-muted-foreground">Go Fiber + MySQL</div>
           </div>
         </div>
 
         <nav className="hidden items-center gap-2 text-sm md:flex">
-          <Link to="/login" className="rounded-md px-3 py-2 text-muted-foreground hover:text-foreground">
+          <Link
+            to="/login"
+            className="rounded-md px-3 py-2 text-muted-foreground hover:text-foreground"
+          >
             Login
           </Link>
-          <Link to="/register" className="rounded-md px-3 py-2 text-muted-foreground hover:text-foreground">
+          <Link
+            to="/register"
+            className="rounded-md px-3 py-2 text-muted-foreground hover:text-foreground"
+          >
             Register
           </Link>
           <Link
@@ -117,12 +121,10 @@ function Landing() {
           API v4.0
         </span>
 
-        <h1 className="mt-6 text-5xl font-extrabold tracking-tight md:text-7xl">
-          NetMonitor API
-        </h1>
+        <h1 className="mt-6 text-5xl font-extrabold tracking-tight md:text-7xl">SCINetwork</h1>
         <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-          Dashboard observability jaringan untuk inventory devices, monitoring configs,
-          device status, alerts, notifications, topology, dan ML observability.
+          Dashboard observability jaringan untuk inventory devices, monitoring configs, device
+          status, alerts, notifications, topology, dan ML observability.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -159,7 +161,7 @@ function Landing() {
               <div>
                 <div className="font-semibold">Backend belum bisa dijangkau</div>
                 <div className="font-mono text-xs text-muted-foreground">
-                  Pastikan NetMonitor API berjalan di {API_BASE_URL}, atau set{" "}
+                  Pastikan SCINetwork API berjalan di {API_BASE_URL}, atau set{" "}
                   <code className="text-foreground">VITE_API_BASE_URL</code>.
                 </div>
               </div>
@@ -196,7 +198,7 @@ function Landing() {
       </main>
 
       <footer className="relative z-10 border-t border-border/60 py-6 text-center font-mono text-xs text-muted-foreground">
-        NetMonitor API v4.0 · Go Fiber + GORM + MySQL
+        SCINetwork v4.0 · Go Fiber + MySQL
       </footer>
     </div>
   );
@@ -213,15 +215,11 @@ function StatusTile({ card }: { card: StatusCard }) {
   return (
     <div className="group relative overflow-hidden rounded-xl border border-border bg-card/70 p-5 backdrop-blur transition-colors hover:border-primary/40">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-xs tracking-widest text-muted-foreground">
-          {card.label}
-        </div>
+        <div className="font-mono text-xs tracking-widest text-muted-foreground">{card.label}</div>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="mt-4 truncate font-semibold">{card.value}</div>
-      <div className={`mt-1 font-mono text-xs ${statusColor}`}>
-        {card.status}
-      </div>
+      <div className={`mt-1 font-mono text-xs ${statusColor}`}>{card.status}</div>
     </div>
   );
 }
@@ -237,21 +235,6 @@ function FeatureCard({ title, desc }: { title: string; desc: string }) {
 
 function Logo() {
   return (
-    <div className="grid grid-cols-3 gap-[3px]">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <span
-          key={i}
-          className="h-2 w-2 rounded-[2px]"
-          style={{
-            backgroundColor:
-              i % 3 === 0
-                ? "oklch(0.78 0.18 162)"
-                : i % 2 === 0
-                  ? "oklch(0.72 0.16 230)"
-                  : "oklch(0.55 0.05 240)",
-          }}
-        />
-      ))}
-    </div>
+    <img src="/logo.png" alt="SCINetwork logo" className="h-10 w-10 rounded-md object-contain" />
   );
 }

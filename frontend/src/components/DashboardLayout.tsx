@@ -24,7 +24,6 @@ const items: Array<{ to: string; label: string; icon: typeof LayoutDashboard; ex
   { to: "/dashboard/users", label: "Users", icon: Users },
 ];
 
-
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const loc = useLocation();
@@ -41,8 +40,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-3 px-5 py-5">
           <Logo />
           <div className="leading-tight">
-            <div className="text-sm font-semibold">NetMonitor</div>
-            <div className="font-mono text-[10px] text-muted-foreground">v4.0 · fiber+gorm</div>
+            <div className="text-sm font-semibold">SCINetwork</div>
+            <div className="font-mono text-[10px] text-muted-foreground">v4.0 · fiber+mysql</div>
           </div>
         </div>
 
@@ -71,7 +70,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-sidebar-border p-4">
           <div className="mb-3">
-            <div className="truncate text-sm font-medium">{user?.full_name ?? user?.username ?? "Guest"}</div>
+            <div className="truncate text-sm font-medium">
+              {user?.full_name ?? user?.username ?? "Guest"}
+            </div>
             <div className="font-mono text-[10px] text-muted-foreground">
               {user?.role ?? "anonymous"}
             </div>
@@ -96,22 +97,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
 function Logo() {
   return (
-    <div className="grid grid-cols-3 gap-[3px]">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <span
-          key={i}
-          className="h-1.5 w-1.5 rounded-[2px]"
-          style={{
-            backgroundColor:
-              i % 3 === 0
-                ? "oklch(0.78 0.18 162)"
-                : i % 2 === 0
-                  ? "oklch(0.72 0.16 230)"
-                  : "oklch(0.55 0.05 240)",
-          }}
-        />
-      ))}
-    </div>
+    <img src="/logo.png" alt="SCINetwork logo" className="h-9 w-9 rounded-md object-contain" />
   );
 }
 

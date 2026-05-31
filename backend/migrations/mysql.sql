@@ -1,5 +1,5 @@
 -- ============================================================
--- NetMon - MySQL Migration
+-- SCINetwork - MySQL Migration
 -- Run: mysql -u root -p netmon < migrations/mysql.sql
 -- ============================================================
 

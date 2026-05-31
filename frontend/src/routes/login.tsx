@@ -12,8 +12,8 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Login — NetMonitor" },
-      { name: "description", content: "Sign in to NetMonitor observability dashboard." },
+      { title: "Login — SCINetwork" },
+      { name: "description", content: "Sign in to SCINetwork observability dashboard." },
     ],
   }),
   component: LoginPage,
@@ -33,8 +33,8 @@ function LoginPage() {
       await login(username, password);
       toast.success("Welcome back!");
       nav({ to: "/dashboard" });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Login failed");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -47,8 +47,15 @@ function LoginPage() {
         <Link to="/" className="font-mono text-xs text-muted-foreground hover:text-foreground">
           ← back
         </Link>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight">Sign in to NetMonitor</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Akses dashboard observability jaringan.</p>
+        <img
+          src="/logo.png"
+          alt="SCINetwork logo"
+          className="mt-4 h-12 w-12 rounded-md object-contain"
+        />
+        <h1 className="mt-3 text-2xl font-bold tracking-tight">Sign in to SCINetwork</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Akses dashboard observability jaringan.
+        </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
@@ -73,7 +80,11 @@ function LoginPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <LogIn className="mr-2 h-4 w-4" />
+            )}
             Login
           </Button>
         </form>

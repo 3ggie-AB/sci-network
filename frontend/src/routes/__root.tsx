@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth";
 import { Toaster } from "../components/ui/sonner";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -80,19 +79,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NetMonitor — Network Observability" },
+      { title: "SCINetwork — Network Observability" },
       {
         name: "description",
         content:
           "Dashboard observability jaringan untuk inventory devices, monitoring configs, alerts, topology, dan ML observability.",
       },
-      { property: "og:title", content: "NetMonitor — Network Observability" },
-      { property: "og:description", content: "Network monitoring dashboard powered by Go Fiber + GORM + MySQL." },
+      { property: "og:title", content: "SCINetwork — Network Observability" },
+      {
+        property: "og:description",
+        content: "Network monitoring dashboard powered by Go Fiber + MySQL.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: "/logo.png" },
+      { rel: "apple-touch-icon", href: "/logo.png" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
@@ -132,4 +136,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

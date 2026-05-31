@@ -1,8 +1,8 @@
-// Lightweight API client for NetMonitor backend
+// Lightweight API client for SCINetwork backend
 const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:3434";
 
-const TOKEN_KEY = "netmonitor.token";
-const USER_KEY = "netmonitor.user";
+const TOKEN_KEY = "scinetwork.token";
+const USER_KEY = "scinetwork.user";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

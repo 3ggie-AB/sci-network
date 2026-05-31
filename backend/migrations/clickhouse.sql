@@ -1,5 +1,5 @@
 -- ============================================================
--- NetMon - ClickHouse Migration
+-- SCINetwork - ClickHouse Migration
 -- Run: clickhouse-client --multiquery --query "$(cat migrations/clickhouse.sql)"
 -- ============================================================
 

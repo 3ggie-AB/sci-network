@@ -254,7 +254,7 @@ func sendEmail(message string) {
 	}
 
 	addr := fmt.Sprintf("%s:%s", cfg.AlertEmailSMTPHost, cfg.AlertEmailSMTPPort)
-	subject := "NetMon Alert"
+	subject := "SCINetwork Alert"
 	body := "To: " + cfg.AlertEmailTo + "\r\n" +
 		"Subject: " + subject + "\r\n" +
 		"Content-Type: text/plain; charset=UTF-8\r\n\r\n" +

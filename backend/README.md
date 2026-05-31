@@ -1,4 +1,4 @@
-# NetMon - Network Monitoring API
+# SCINetwork - Network Monitoring API
 
 Sistem monitoring jaringan berbasis Go dengan fitur scheduler monitoring, device management, alerting, Ping/ICMP, SNMP, HTTP GET checker, manajemen user RBAC, dan umpan balik/keluhan.
 

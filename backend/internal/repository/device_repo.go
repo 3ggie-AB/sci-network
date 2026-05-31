@@ -272,7 +272,7 @@ func EnsureLocalAgentDevice() (*model.Device, error) {
 			http_enabled = 0,
 			is_active = 0,
 			updated_at = VALUES(updated_at)`,
-		LocalAgentDeviceID, "NetMon Local Agent", hostname, now, now,
+		LocalAgentDeviceID, "SCINetwork Local Agent", hostname, now, now,
 	)
 	if err != nil {
 		return nil, err

@@ -13,7 +13,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "ok",
-			"service": "NetMon API",
+			"service": "SCINetwork API",
 		})
 	})
 

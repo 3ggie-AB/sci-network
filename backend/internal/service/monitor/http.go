@@ -53,7 +53,7 @@ func executeHTTPGet(userID string, device *model.Device, req model.HTTPGetReques
 		httpReq.Header.Set(key, value)
 	}
 	if httpReq.Header.Get("User-Agent") == "" {
-		httpReq.Header.Set("User-Agent", "NetMon/1.0")
+		httpReq.Header.Set("User-Agent", "SCINetwork/1.0")
 	}
 
 	client := &http.Client{Timeout: timeout}
