@@ -19,9 +19,9 @@ const items: Array<{ to: string; label: string; icon: typeof LayoutDashboard; ex
   { to: "/dashboard/devices", label: "Devices", icon: Server },
   { to: "/dashboard/alerts", label: "Alerts", icon: Bell },
   { to: "/dashboard/feedbacks", label: "Feedbacks", icon: MessageSquareWarning },
-  { to: "/dashboard/network", label: "Network Tools", icon: Wrench },
   { to: "/dashboard/logs", label: "Logs", icon: ScrollText },
   { to: "/dashboard/users", label: "Users", icon: Users },
+  { to: "/dashboard/network", label: "Manual Tools", icon: Wrench },
 ];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {

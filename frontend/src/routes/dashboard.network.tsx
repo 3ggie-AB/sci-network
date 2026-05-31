@@ -44,7 +44,7 @@ type LocalInterface = {
 function NetworkTools() {
   return (
     <>
-      <PageHeader title="Network Tools" description="Ping, SNMP GET, dan HTTP probe." />
+      <PageHeader title="Manual Tools" description="Ping, SNMP GET, dan HTTP probe." />
       <Tabs defaultValue="ping" className="space-y-4">
         <TabsList>
           <TabsTrigger value="ping">Ping</TabsTrigger>

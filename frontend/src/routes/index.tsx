@@ -191,7 +191,7 @@ function Landing() {
             desc="Threshold packet loss, latency, availability. Notifikasi Telegram, email, WhatsApp."
           />
           <FeatureCard
-            title="Network Tools"
+            title="Manual Tools"
             desc="Ping, SNMP GET, HTTP probe. Log historis dengan filter device/status."
           />
         </section>
