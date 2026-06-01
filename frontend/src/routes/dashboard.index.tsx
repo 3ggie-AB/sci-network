@@ -5,7 +5,9 @@ import {
   Activity,
   AlertTriangle,
   Clock3,
+  Database,
   Gauge,
+  HardDrive,
   MessageSquareWarning,
   RadioTower,
   Server,
@@ -54,6 +56,23 @@ type FeedbackSummary = {
   id?: string;
 };
 
+type StorageDatabase = {
+  name?: string;
+  engine?: string;
+  status?: string;
+  size_bytes?: number;
+  tables?: number;
+  rows?: number;
+  error?: string;
+};
+
+type StorageOverview = {
+  mysql?: StorageDatabase;
+  clickhouse?: StorageDatabase;
+  total_bytes?: number;
+  checked_at?: string;
+};
+
 type DeviceHistoryPoint = {
   bucket?: string;
   total_checks?: number;
@@ -100,6 +119,11 @@ function Overview() {
     queryKey: ["feedbacks", "overview"],
     queryFn: () => api<unknown>("/api/feedbacks?page=1&limit=100").catch(() => null),
   });
+  const storage = useQuery({
+    queryKey: ["system", "storage"],
+    queryFn: () => api<unknown>("/api/system/storage").catch(() => null),
+    refetchInterval: 30_000,
+  });
   const history = useQuery({
     queryKey: ["network", "device-history", historyDevice, historyRange],
     queryFn: () => {
@@ -115,6 +139,7 @@ function Overview() {
   const openAlerts = asArray<AlertSummary>(alerts.data);
   const deviceItems = asArray<DeviceSummary>(devices.data);
   const feedbackItems = asArray<FeedbackSummary>(feedbacks.data);
+  const storageData = asObject<StorageOverview>(storage.data);
   const historyPoints = asArray<DeviceHistoryPoint>(history.data).map((point) => ({
     ...point,
     label: formatBucket(point.bucket, historyRange),
@@ -180,6 +205,25 @@ function Overview() {
         title="Overview"
         description="Snapshot kondisi monitoring, target perangkat, dan alert terbaru."
       />
+
+      <section className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr_auto]">
+        <StorageCard title="MySQL Storage" data={storageData.mysql} icon={Database} />
+        <StorageCard title="ClickHouse Storage" data={storageData.clickhouse} icon={HardDrive} />
+        <div className="rounded-lg border border-border bg-card/70 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              Total Storage
+            </div>
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="mt-3 font-mono text-3xl font-semibold">
+            {bytes(storageData.total_bytes)}
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {storageData.checked_at ? new Date(storageData.checked_at).toLocaleTimeString() : "—"}
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((t) => {
@@ -447,6 +491,14 @@ function ms(value: unknown) {
   return `${Number.isFinite(n) ? n.toFixed(1) : "0.0"} ms`;
 }
 
+function bytes(value: unknown) {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1);
+  return `${(n / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
 function formatBucket(value: unknown, range: string) {
   if (typeof value !== "string") return "—";
   const date = new Date(value);
@@ -461,6 +513,44 @@ function Empty({ label }: { label: string }) {
   return (
     <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
       {label}
+    </div>
+  );
+}
+
+function StorageCard({
+  title,
+  data,
+  icon: Icon,
+}: {
+  title: string;
+  data?: StorageDatabase;
+  icon: typeof Database;
+}) {
+  const status = data?.status ?? "unknown";
+  return (
+    <div className="rounded-lg border border-border bg-card/70 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {title}
+        </div>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="font-mono text-3xl font-semibold">{bytes(data?.size_bytes)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {data?.name ?? "—"} · {num(data?.tables)} tables · {num(data?.rows)} rows
+          </div>
+        </div>
+        <span
+          className={`font-mono text-xs ${status === "ok" ? "text-primary" : "text-destructive"}`}
+        >
+          {status}
+        </span>
+      </div>
+      {data?.error ? (
+        <div className="mt-2 truncate text-xs text-destructive">{data.error}</div>
+      ) : null}
     </div>
   );
 }

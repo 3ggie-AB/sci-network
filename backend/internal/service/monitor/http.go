@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -151,18 +152,46 @@ func logHTTPGet(userID string, device *model.Device, result *model.HTTPGetResult
 		status = httpStatus(device, result)
 	}
 
-	resultJSON, _ := json.Marshal(result)
 	_ = repository.InsertNetworkLogEntry(model.NetworkLog{
 		UserID:       userID,
 		DeviceID:     deviceID,
 		Action:       "http",
 		Target:       result.URL,
-		Result:       string(resultJSON),
+		Result:       httpLogResultJSON(result),
 		Success:      success,
 		Duration:     result.Duration,
 		ResponseTime: result.Duration,
 		Status:       monitorStatusLabel(status),
 	})
+}
+
+func httpLogResultJSON(result *model.HTTPGetResult) string {
+	if result == nil {
+		return "null"
+	}
+
+	logResult := *result
+	bodyOmitted := shouldOmitHTTPBodyFromLog(logResult.ContentType) && logResult.Body != ""
+	if bodyOmitted {
+		logResult.Body = ""
+	}
+
+	resultJSON, _ := json.Marshal(struct {
+		*model.HTTPGetResult
+		BodyOmitted bool `json:"body_omitted,omitempty"`
+	}{
+		HTTPGetResult: &logResult,
+		BodyOmitted:   bodyOmitted,
+	})
+	return string(resultJSON)
+}
+
+func shouldOmitHTTPBodyFromLog(contentType string) bool {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		mediaType = strings.TrimSpace(strings.ToLower(contentType))
+	}
+	return mediaType == "text/html" || mediaType == "application/xhtml+xml"
 }
 
 func httpStatus(device *model.Device, result *model.HTTPGetResult) model.DeviceStatus {

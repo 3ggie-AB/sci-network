@@ -233,6 +233,12 @@ GET /api/network/stats
 GET /api/network/device-history?range=24h&device_id=<device_id>
 ```
 
+### System
+
+```http
+GET /api/system/storage
+```
+
 ---
 
 ## 🔧 Environment Variables

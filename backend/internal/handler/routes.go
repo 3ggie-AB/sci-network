@@ -28,6 +28,13 @@ func SetupRoutes(app *fiber.App) {
 	// Profile (semua role)
 	protected.Get("/auth/me", Me)
 
+	// ─── System Info ──────────────────────────────────────────────────────────
+	system := protected.Group("/system")
+	system.Get("/storage",
+		middleware.RequirePermission(model.PermReportRead),
+		SystemStorage,
+	)
+
 	// ─── User Management (admin only) ─────────────────────────────────────────
 	users := protected.Group("/users")
 	users.Get("/roles", GetRoles) // semua bisa lihat daftar role

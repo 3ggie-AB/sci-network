@@ -1,6 +1,8 @@
 package monitor
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/yourorg/netmon/internal/model"
@@ -74,5 +76,65 @@ func TestHTTPStatusClassification(t *testing.T) {
 				t.Fatalf("expected status %q, got %q", tc.status, got)
 			}
 		})
+	}
+}
+
+func TestHTTPLogResultJSONOmitsBody(t *testing.T) {
+	result := &model.HTTPGetResult{
+		URL:           "https://example.com",
+		StatusCode:    200,
+		Status:        "200 OK",
+		ContentType:   "text/html; charset=utf-8",
+		Body:          strings.Repeat("<html>heavy</html>", 256),
+		BodyTruncated: true,
+		Duration:      123,
+		IsUp:          true,
+	}
+
+	payload := httpLogResultJSON(result)
+	if strings.Contains(payload, "<html>heavy</html>") {
+		t.Fatal("expected ClickHouse HTTP log payload to omit response body")
+	}
+	if result.Body == "" {
+		t.Fatal("expected original HTTP result body to remain available")
+	}
+
+	var stored map[string]any
+	if err := json.Unmarshal([]byte(payload), &stored); err != nil {
+		t.Fatalf("expected valid JSON payload, got %v", err)
+	}
+	if _, ok := stored["body"]; ok {
+		t.Fatal("expected body field to be absent from stored HTTP log payload")
+	}
+	if stored["body_omitted"] != true {
+		t.Fatalf("expected body_omitted=true, got %v", stored["body_omitted"])
+	}
+	if stored["body_truncated"] != true {
+		t.Fatalf("expected body_truncated=true, got %v", stored["body_truncated"])
+	}
+}
+
+func TestHTTPLogResultJSONKeepsNonHTMLBody(t *testing.T) {
+	result := &model.HTTPGetResult{
+		URL:         "https://api.example.com/health",
+		StatusCode:  200,
+		Status:      "200 OK",
+		ContentType: "application/json",
+		Body:        `{"ok":true}`,
+		Duration:    45,
+		IsUp:        true,
+	}
+
+	payload := httpLogResultJSON(result)
+
+	var stored map[string]any
+	if err := json.Unmarshal([]byte(payload), &stored); err != nil {
+		t.Fatalf("expected valid JSON payload, got %v", err)
+	}
+	if stored["body"] != result.Body {
+		t.Fatalf("expected non-HTML body to be stored, got %v", stored["body"])
+	}
+	if _, ok := stored["body_omitted"]; ok {
+		t.Fatal("expected body_omitted to be absent for non-HTML body")
 	}
 }
