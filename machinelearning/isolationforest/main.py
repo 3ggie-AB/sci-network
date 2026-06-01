@@ -8,6 +8,12 @@ Install dependency:
 Contoh jalan:
     python main.py --days 7 --limit 50000 --output output/anomalies.csv
 
+Output model harian:
+    models/model_2026-06-01.joblib
+    models/model_2026-06-01.json
+    models/latest -> model_2026-06-01.joblib
+    models/model_latest.joblib
+
 Env ClickHouse:
     CLICKHOUSE_HOST=localhost
     CLICKHOUSE_HTTP_PORT=8123
@@ -19,10 +25,13 @@ Env ClickHouse:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
+import shutil
 import sys
 from dataclasses import dataclass
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -155,11 +164,27 @@ def parse_args() -> argparse.Namespace:
         help="Opsional: simpan semua hasil scoring, bukan hanya anomali.",
     )
     parser.add_argument(
-        "--model-output",
-        default="output/isolation_forest.joblib",
-        help="Path model joblib saat --save-model aktif.",
+        "--models-dir",
+        default="models",
+        help="Folder export model harian. Relatif terhadap folder script jika bukan absolute.",
     )
-    parser.add_argument("--save-model", action="store_true", help="Simpan pipeline model ke file joblib.")
+    parser.add_argument(
+        "--model-date",
+        type=model_date_arg,
+        default="",
+        help="Tanggal nama model YYYY-MM-DD. Default: tanggal lokal saat script jalan.",
+    )
+    parser.add_argument(
+        "--model-output",
+        default="",
+        help="Opsional: simpan copy tambahan model ke path custom.",
+    )
+    parser.add_argument(
+        "--save-model",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Export model harian. Gunakan --no-save-model untuk hanya scoring.",
+    )
     parser.add_argument("--top", type=positive_int, default=10, help="Jumlah anomali teratas yang ditampilkan.")
     return parser.parse_args()
 
@@ -178,6 +203,20 @@ def contamination_value(value: str) -> str | float:
     if parsed <= 0 or parsed > 0.5:
         raise argparse.ArgumentTypeError("harus 'auto' atau angka > 0 sampai 0.5")
     return parsed
+
+
+def model_date_value(value: str) -> str:
+    if not value:
+        return date.today().isoformat()
+    return model_date_arg(value)
+
+
+def model_date_arg(value: str) -> str:
+    if not value:
+        return ""
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        raise argparse.ArgumentTypeError("harus format YYYY-MM-DD")
+    return value
 
 
 def load_clickhouse_config() -> ClickHouseConfig:
@@ -353,9 +392,7 @@ def train_and_score(df: Any, args: argparse.Namespace, deps: dict[str, Any]) -> 
 
 
 def write_dataframe(df: Any, output: str) -> None:
-    path = Path(output)
-    if not path.is_absolute():
-        path = Path(__file__).resolve().parent / path
+    path = resolve_path(output)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     columns = [column for column in OUTPUT_COLUMNS if column in df.columns]
@@ -372,13 +409,115 @@ def write_dataframe(df: Any, output: str) -> None:
     print(f"Output tersimpan: {path}")
 
 
-def save_model(model: Any, output: str, deps: dict[str, Any]) -> None:
+def resolve_path(path_value: str) -> Path:
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = Path(__file__).resolve().parent / path
+    return path
+
+
+def save_model(model: Any, output: str, deps: dict[str, Any]) -> Path:
     path = Path(output)
     if not path.is_absolute():
         path = Path(__file__).resolve().parent / path
     path.parent.mkdir(parents=True, exist_ok=True)
-    deps["joblib"].dump(model, path)
+    temp_path = path.with_suffix(path.suffix + ".tmp")
+    deps["joblib"].dump(model, temp_path)
+    os.replace(temp_path, path)
     print(f"Model tersimpan: {path}")
+    return path
+
+
+def save_json(payload: dict[str, Any], output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = output.with_suffix(output.suffix + ".tmp")
+    temp_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(temp_path, output)
+
+
+def update_symlink(link_path: Path, target_path: Path) -> bool:
+    try:
+        if link_path.exists() or link_path.is_symlink():
+            link_path.unlink()
+        link_path.symlink_to(target_path.name)
+        return True
+    except OSError as exc:
+        print(f"Symlink latest gagal dibuat ({exc}); fallback model_latest.joblib tetap tersedia.", file=sys.stderr)
+        return False
+
+
+def export_daily_model(
+    model: Any,
+    scored: Any,
+    anomalies: Any,
+    args: argparse.Namespace,
+    config: ClickHouseConfig,
+    deps: dict[str, Any],
+) -> Path:
+    model_date = model_date_value(args.model_date)
+    models_dir = resolve_path(args.models_dir)
+    model_path = models_dir / f"model_{model_date}.joblib"
+    metadata_path = models_dir / f"model_{model_date}.json"
+
+    saved_model_path = save_model(model, str(model_path), deps)
+    metadata = build_model_metadata(model_date, scored, anomalies, args, config, saved_model_path)
+    save_json(metadata, metadata_path)
+    print(f"Metadata model tersimpan: {metadata_path}")
+
+    latest_copy = models_dir / "model_latest.joblib"
+    latest_metadata = models_dir / "model_latest.json"
+    shutil.copy2(saved_model_path, latest_copy)
+    shutil.copy2(metadata_path, latest_metadata)
+    print(f"Model latest tersimpan: {latest_copy}")
+
+    if update_symlink(models_dir / "latest", saved_model_path):
+        print(f"Symlink latest -> {saved_model_path.name}")
+
+    if args.model_output:
+        save_model(model, args.model_output, deps)
+
+    return saved_model_path
+
+
+def build_model_metadata(
+    model_date: str,
+    scored: Any,
+    anomalies: Any,
+    args: argparse.Namespace,
+    config: ClickHouseConfig,
+    model_path: Path,
+) -> dict[str, Any]:
+    total_rows = int(len(scored))
+    anomaly_rows = int(len(anomalies))
+    anomaly_rate = (anomaly_rows / total_rows) if total_rows else 0.0
+    return {
+        "model_date": model_date,
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "model_path": str(model_path),
+        "model_type": "sklearn.pipeline.Pipeline",
+        "detector": "sklearn.ensemble.IsolationForest",
+        "source": {
+            "database": config.database,
+            "table": "network_logs",
+            "days": args.days,
+            "limit": args.limit,
+            "user_id": args.user_id,
+            "device_id": args.device_id,
+            "action": args.action or "",
+        },
+        "training": {
+            "rows": total_rows,
+            "anomaly_rows": anomaly_rows,
+            "anomaly_rate": anomaly_rate,
+            "contamination": args.contamination,
+            "estimators": args.estimators,
+            "random_state": args.random_state,
+        },
+        "features": {
+            "numeric": NUMERIC_FEATURES,
+            "categorical": CATEGORICAL_FEATURES,
+        },
+    }
 
 
 def print_summary(scored: Any, top: int) -> None:
@@ -438,7 +577,7 @@ def main() -> int:
     if args.all_output:
         write_dataframe(scored, args.all_output)
     if args.save_model:
-        save_model(model, args.model_output, deps)
+        export_daily_model(model, scored, anomalies, args, config, deps)
 
     print_summary(scored, args.top)
     return 0

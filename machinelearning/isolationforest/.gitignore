@@ -2,4 +2,9 @@
 *
 !.gitignore
 !main.py
+!README.md
 !requirements.txt
+!train_daily.sh
+!sidecar.py
+!serve.sh
+!Dockerfile

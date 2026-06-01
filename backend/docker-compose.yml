@@ -63,6 +63,7 @@ services:
     environment:
       MYSQL_HOST: mysql
       CLICKHOUSE_HOST: clickhouse
+      ANOMALY_SIDECAR_URL: http://ml-sidecar:8001
     ports:
       - "3000:3000"
     depends_on:
@@ -72,6 +73,27 @@ services:
         condition: service_healthy
     cap_add:
       - NET_RAW   # diperlukan untuk ICMP ping
+
+  # ── ML Sidecar ──────────────────────────────────────────────────────────────
+  ml-sidecar:
+    build:
+      context: ../machinelearning/isolationforest
+      dockerfile: Dockerfile
+    container_name: netmon_ml_sidecar
+    restart: unless-stopped
+    environment:
+      MODEL_PATH: /app/models/latest
+      MODEL_FALLBACK_PATH: /app/models/model_latest.joblib
+      MODEL_METADATA_PATH: /app/models/model_latest.json
+    ports:
+      - "8001:8001"
+    volumes:
+      - ../machinelearning/isolationforest/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mysql_data:
