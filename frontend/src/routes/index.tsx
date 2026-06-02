@@ -173,8 +173,10 @@ const CSS = `
     width:36px;height:36px;border-radius:10px;flex-shrink:0;
     background:linear-gradient(135deg,#0f3728,#1a5c3f);
     border:1px solid rgba(52,211,153,0.3);
+    overflow:hidden;
     display:flex;align-items:center;justify-content:center;
   }
+  .scin-logo-img{width:100%;height:100%;object-fit:contain;padding:4px}
   .scin-nav-name{font-size:.95rem;font-weight:600;letter-spacing:-.01em;line-height:1.2}
   .scin-nav-sub{font-family:var(--fm);font-size:.62rem;color:var(--muted);letter-spacing:.05em}
   .scin-nav-links{display:flex;align-items:center;gap:4px}
@@ -698,7 +700,7 @@ function Landing() {
       <nav className="scin-nav">
         <div className="scin-nav-logo">
           <div className="scin-nav-icon">
-            <Network className="h-5 w-5" style={{ color: "var(--green)" }} />
+            <img src="/logo.png" alt="SCINetwork logo" className="scin-logo-img" />
           </div>
           <div>
             <div className="scin-nav-name">SCINetwork</div>
@@ -939,7 +941,9 @@ function Landing() {
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <footer className="scin-footer">
         <div className="scin-footer-brand">
-          <div className="scin-nav-icon"><Network className="h-4 w-4" style={{ color: "var(--green)" }} /></div>
+          <div className="scin-nav-icon">
+            <img src="/logo.png" alt="SCINetwork logo" className="scin-logo-img" />
+          </div>
           <div>
             <div className="scin-footer-name">SCINetwork</div>
             <div className="scin-footer-sub">Go Fiber + MySQL + Isolation Forest</div>
