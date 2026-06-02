@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   ShieldCheck, LogIn, ListChecks, Server, Database, Radio, Activity,
@@ -7,8 +7,11 @@ import {
   Zap, BarChart3, ArrowRight,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { API_BASE_URL, pingBackend } from "@/lib/api";
+import { API_BASE_URL, getToken, pingBackend } from "@/lib/api";
+import { enableBrowserPush } from "@/lib/push-notifications";
+import { toast } from "sonner";
+
+const PENDING_PUSH_ENABLE_KEY = "scinetwork.enablePushAfterLogin";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -254,6 +257,7 @@ const CSS = `
     transition:transform .2s,box-shadow .2s;letter-spacing:-.01em;
   }
   .scin-btn:hover{transform:translateY(-2px)}
+  .scin-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
   .scin-btn-primary{
     background:var(--green);color:#030a05;
     box-shadow:0 0 30px rgba(52,211,153,0.35),0 4px 16px rgba(0,0,0,.4);
@@ -664,7 +668,9 @@ function MiniChart({ vals, isAnomaly }: { vals: number[]; isAnomaly: boolean }) 
 // ─── Main component ────────────────────────────────────────────────────────────
 function Landing() {
   const [online, setOnline] = useState<boolean | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nav = useNavigate();
   useNetworkCanvas(canvasRef);
   useReveal();
 
@@ -689,6 +695,39 @@ function Landing() {
     { label: "STACK",   value: "fiber + mysql",  status: online === null ? "unknown" : online ? "online" : "offline",     icon: Radio    },
     { label: "BACKEND", value: API_BASE_URL,     status: online === null ? "unknown" : online ? "online" : "offline",     icon: Activity },
   ];
+
+  async function onEnableLandingPush() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("Browser ini belum mendukung notifikasi");
+      return;
+    }
+
+    setPushBusy(true);
+    try {
+      const permission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+      if (permission !== "granted") {
+        toast.error("Izin notifikasi belum diberikan");
+        return;
+      }
+
+      if (getToken()) {
+        await enableBrowserPush();
+        toast.success("Browser alerts aktif");
+        return;
+      }
+
+      localStorage.setItem(PENDING_PUSH_ENABLE_KEY, "1");
+      toast.success("Izin notifikasi aktif. Login dulu untuk menghubungkan alert.");
+      nav({ to: "/login" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengaktifkan notifikasi");
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   return (
     <div className="scin-root">
@@ -739,6 +778,9 @@ function Landing() {
           <Link to="/login" className="scin-btn scin-btn-primary">
             Masuk ke Dashboard <ArrowRight size={16} />
           </Link>
+          <button type="button" className="scin-btn scin-btn-secondary" onClick={onEnableLandingPush} disabled={pushBusy}>
+            {pushBusy ? "Menyiapkan Notifikasi..." : "Aktifkan Notifikasi"} <Bell size={16} />
+          </button>
           <a href="#technology" className="scin-btn scin-btn-secondary">
             Pelajari Lebih Lanjut
           </a>

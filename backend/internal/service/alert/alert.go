@@ -14,6 +14,7 @@ import (
 	"github.com/yourorg/netmon/config"
 	"github.com/yourorg/netmon/internal/model"
 	"github.com/yourorg/netmon/internal/repository"
+	"github.com/yourorg/netmon/internal/service/push"
 )
 
 func EvaluatePing(device model.Device, result *model.PingResult, checkErr error) model.DeviceStatus {
@@ -197,6 +198,7 @@ func dispatch(alert *model.Alert) {
 	if config.App.AlertEmailSMTPHost != "" && config.App.AlertEmailTo != "" {
 		sendEmail(message)
 	}
+	push.SendAlert(alert)
 }
 
 func sendWebhook(webhookURL string, alert *model.Alert, message string) {

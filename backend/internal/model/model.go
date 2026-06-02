@@ -417,6 +417,36 @@ type UpdateAlertNotesRequest struct {
 	Notes string `json:"notes"`
 }
 
+// ─── Browser Push Notifications ──────────────────────────────────────────────
+
+type PushSubscriptionKeys struct {
+	Auth   string `json:"auth"`
+	P256dh string `json:"p256dh"`
+}
+
+type PushSubscriptionRequest struct {
+	Endpoint       string               `json:"endpoint"`
+	ExpirationTime *int64               `json:"expirationTime"`
+	Keys           PushSubscriptionKeys `json:"keys"`
+}
+
+type PushSubscription struct {
+	ID           string     `db:"id"             json:"id"`
+	UserID       string     `db:"user_id"        json:"user_id"`
+	Endpoint     string     `db:"endpoint"       json:"endpoint"`
+	EndpointHash string     `db:"endpoint_hash"  json:"endpoint_hash"`
+	P256dh       string     `db:"p256dh"         json:"p256dh"`
+	Auth         string     `db:"auth"           json:"auth"`
+	UserAgent    string     `db:"user_agent"     json:"user_agent"`
+	CreatedAt    time.Time  `db:"created_at"     json:"created_at"`
+	UpdatedAt    time.Time  `db:"updated_at"     json:"updated_at"`
+	LastUsedAt   *time.Time `db:"last_used_at"  json:"last_used_at,omitempty"`
+}
+
+type DeletePushSubscriptionRequest struct {
+	Endpoint string `json:"endpoint"`
+}
+
 // ─── Network Log (ClickHouse) ─────────────────────────────────────────────────
 
 type NetworkLog struct {

@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.23.2
+	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -11,7 +12,7 @@ require (
 	github.com/gosnmp/gosnmp v1.37.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/crypto v0.23.0
+	golang.org/x/crypto v0.31.0
 )
 
 require (
@@ -20,6 +21,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -37,6 +39,6 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

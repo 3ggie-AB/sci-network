@@ -132,6 +132,21 @@ func SetupRoutes(app *fiber.App) {
 		DeleteAlert,
 	)
 
+	// ─── Browser Push Notifications ──────────────────────────────────────────
+	push := protected.Group("/push")
+	push.Get("/public-key",
+		middleware.RequirePermission(model.PermAlertRead),
+		GetPushPublicKey,
+	)
+	push.Post("/subscriptions",
+		middleware.RequirePermission(model.PermAlertRead),
+		SavePushSubscription,
+	)
+	push.Delete("/subscriptions",
+		middleware.RequirePermission(model.PermAlertRead),
+		DeletePushSubscription,
+	)
+
 	// ─── Network Tools ────────────────────────────────────────────────────────
 	net := protected.Group("/network")
 	net.Post("/ping",

@@ -108,6 +108,10 @@ func ensureClickHouseDatabase(cfg *config.Config) error {
 }
 
 func ensureMySQLSchemaPatches(db *sqlx.DB, cfg *config.Config) error {
+	if err := ensurePushSubscriptionsTable(db); err != nil {
+		return err
+	}
+
 	hasAlerts, err := mysqlTableExists(db, cfg.MySQLDBName, "alerts")
 	if err != nil {
 		return err
@@ -155,6 +159,28 @@ func ensureMySQLSchemaPatches(db *sqlx.DB, cfg *config.Config) error {
 		}
 	}
 	return nil
+}
+
+func ensurePushSubscriptionsTable(db *sqlx.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS push_subscriptions (
+			id            VARCHAR(36)  NOT NULL PRIMARY KEY,
+			user_id       VARCHAR(36)  NOT NULL,
+			endpoint      TEXT         NOT NULL,
+			endpoint_hash CHAR(64)     NOT NULL,
+			p256dh        VARCHAR(255) NOT NULL,
+			auth          VARCHAR(255) NOT NULL,
+			user_agent    VARCHAR(255) NOT NULL DEFAULT '',
+			created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			last_used_at  DATETIME     NULL,
+			CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+			UNIQUE KEY uniq_push_endpoint_hash (endpoint_hash),
+			INDEX idx_push_user (user_id),
+			INDEX idx_push_updated (updated_at)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+	)
+	return err
 }
 
 func addMySQLColumnIfMissing(db *sqlx.DB, schema, table, column, definition string) (bool, error) {

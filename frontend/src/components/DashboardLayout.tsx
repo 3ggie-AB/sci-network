@@ -3,16 +3,26 @@ import {
   LayoutDashboard,
   Server,
   Bell,
+  BellOff,
+  BellRing,
+  Loader2,
   MessageSquareWarning,
   Users,
   Wrench,
   ScrollText,
   LogOut,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import {
+  disableBrowserPush,
+  enableBrowserPush,
+  getBrowserPushState,
+  type BrowserPushState,
+} from "@/lib/push-notifications";
 
 const items: Array<{ to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }> = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -24,14 +34,89 @@ const items: Array<{ to: string; label: string; icon: typeof LayoutDashboard; ex
   { to: "/dashboard/network", label: "Manual Tools", icon: Wrench },
 ];
 
+const PENDING_PUSH_ENABLE_KEY = "scinetwork.enablePushAfterLogin";
+
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const loc = useLocation();
   const nav = useNavigate();
+  const [pushState, setPushState] = useState<BrowserPushState | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const canReadAlerts = ["admin", "atasan", "teknisi"].includes(user?.role ?? "");
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!token || !canReadAlerts) {
+      setPushState(null);
+      return;
+    }
+
+    getBrowserPushState()
+      .then((state) => {
+        if (!cancelled) setPushState(state);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPushState({ supported: false, permission: "unsupported", subscribed: false });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, canReadAlerts]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !token ||
+      !canReadAlerts ||
+      localStorage.getItem(PENDING_PUSH_ENABLE_KEY) !== "1"
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    localStorage.removeItem(PENDING_PUSH_ENABLE_KEY);
+    setPushBusy(true);
+    enableBrowserPush()
+      .then((state) => {
+        if (cancelled) return;
+        setPushState(state);
+        toast.success("Browser alerts aktif");
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toast.error(err instanceof Error ? err.message : "Gagal mengaktifkan browser alerts");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPushBusy(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, canReadAlerts]);
 
   function onLogout() {
     logout();
     nav({ to: "/" });
+  }
+
+  async function onToggleBrowserPush() {
+    setPushBusy(true);
+    try {
+      const nextState = pushState?.subscribed
+        ? await disableBrowserPush()
+        : await enableBrowserPush();
+      setPushState(nextState);
+      toast.success(nextState.subscribed ? "Browser alerts aktif" : "Browser alerts dimatikan");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengubah browser alerts");
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   return (
@@ -77,6 +162,33 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               {user?.role ?? "anonymous"}
             </div>
           </div>
+          {canReadAlerts && (
+            <Button
+              onClick={onToggleBrowserPush}
+              variant="outline"
+              size="sm"
+              className="mb-2 w-full"
+              disabled={
+                pushBusy ||
+                !pushState?.supported ||
+                pushState.permission === "denied" ||
+                pushState.permission === "unsupported"
+              }
+            >
+              {pushBusy ? (
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              ) : pushState?.subscribed ? (
+                <BellRing className="mr-2 h-3.5 w-3.5" />
+              ) : (
+                <BellOff className="mr-2 h-3.5 w-3.5" />
+              )}
+              {pushState?.permission === "denied"
+                ? "Notifications blocked"
+                : pushState?.subscribed
+                  ? "Browser Alerts On"
+                  : "Enable Browser Alerts"}
+            </Button>
+          )}
           <Button onClick={onLogout} variant="secondary" size="sm" className="w-full">
             <LogOut className="mr-2 h-3.5 w-3.5" /> Logout
           </Button>

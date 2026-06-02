@@ -40,6 +40,10 @@ type Config struct {
 	AlertEmailFrom        string
 	AlertEmailTo          string
 
+	VAPIDPublicKey  string
+	VAPIDPrivateKey string
+	VAPIDSubject    string
+
 	// Default users
 	DefaultAdminUsername string
 	DefaultAdminEmail    string
@@ -100,6 +104,10 @@ func Load() {
 		AlertEmailPassword:    getEnv("ALERT_EMAIL_PASSWORD", ""),
 		AlertEmailFrom:        getEnv("ALERT_EMAIL_FROM", ""),
 		AlertEmailTo:          getEnv("ALERT_EMAIL_TO", ""),
+
+		VAPIDPublicKey:  getEnv("VAPID_PUBLIC_KEY", ""),
+		VAPIDPrivateKey: getEnv("VAPID_PRIVATE_KEY", ""),
+		VAPIDSubject:    getEnv("VAPID_SUBJECT", "mailto:admin@netmon.local"),
 
 		DefaultAdminUsername: getEnv("DEFAULT_ADMIN_USERNAME", "admin"),
 		DefaultAdminEmail:    getEnv("DEFAULT_ADMIN_EMAIL", "admin@netmon.local"),

@@ -176,6 +176,25 @@ DELETE /api/alerts/:id
 
 Alert dibuat otomatis oleh scheduler saat threshold seperti `packet_loss`, `latency`, `response_time`, atau availability melewati batas device. Notifikasi Telegram, email, atau webhook/WhatsApp aktif jika env terkait diisi.
 
+### Browser Web Push
+
+```http
+GET    /api/push/public-key
+POST   /api/push/subscriptions
+DELETE /api/push/subscriptions
+Authorization: Bearer <token>
+```
+
+Frontend dashboard memakai endpoint ini untuk mengaktifkan browser notification. Untuk production, isi env berikut dengan key tetap:
+
+```env
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@netmon.local
+```
+
+Jika key kosong, backend membuat key sementara saat start dan menuliskannya ke log. Simpan key tersebut ke `.env` agar subscription browser tetap valid setelah restart.
+
 ### Network Tools
 
 ```http
