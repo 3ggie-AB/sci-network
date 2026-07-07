@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_role      (role),
     INDEX idx_is_active (is_active),
     INDEX idx_email     (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── Feedbacks / Keluhan ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS feedbacks (
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS feedbacks (
     INDEX idx_category (category),
     INDEX idx_user_id  (user_id),
     INDEX idx_priority (priority)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── Devices / Monitor Targets ───────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS devices (
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS devices (
     INDEX idx_monitor_enabled  (monitor_enabled),
     INDEX idx_last_status      (last_status),
     INDEX idx_is_active        (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE devices
     MODIFY last_status ENUM('unknown','healthy','up','warning','critical','down') NOT NULL DEFAULT 'unknown';
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS alerts (
     INDEX idx_alert_severity(severity),
     INDEX idx_alert_metric  (metric),
     INDEX idx_alert_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE alerts
     ADD COLUMN IF NOT EXISTS notes TEXT NULL AFTER message;
@@ -144,4 +144,4 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     UNIQUE KEY uniq_push_endpoint_hash (endpoint_hash),
     INDEX idx_push_user (user_id),
     INDEX idx_push_updated (updated_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

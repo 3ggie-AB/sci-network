@@ -61,6 +61,9 @@ func InitClickHouse() {
 	if err = conn.Ping(ctx); err != nil {
 		log.Fatalf("[CLICKHOUSE] Ping failed: %v", err)
 	}
+	if err = ensureClickHouseSchema(ctx, conn); err != nil {
+		log.Fatalf("[CLICKHOUSE] Schema patch failed: %v", err)
+	}
 
 	ClickHouse = conn
 	log.Println("[CLICKHOUSE] Connected successfully")
@@ -107,7 +110,88 @@ func ensureClickHouseDatabase(cfg *config.Config) error {
 	return conn.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName))
 }
 
+func ensureClickHouseSchema(ctx context.Context, conn driver.Conn) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS network_logs (
+			id String,
+			user_id String,
+			device_id String DEFAULT '',
+			action LowCardinality(String),
+			target String,
+			result String,
+			success UInt8,
+			duration Int64,
+			latency Float64 DEFAULT 0,
+			packet_loss Float64 DEFAULT 0,
+			jitter Float64 DEFAULT 0,
+			response_time Int64 DEFAULT 0,
+			status LowCardinality(String) DEFAULT 'unknown',
+			cpu Float64 DEFAULT 0,
+			memory Float64 DEFAULT 0,
+			bandwidth_in Float64 DEFAULT 0,
+			bandwidth_out Float64 DEFAULT 0,
+			created_at DateTime DEFAULT now()
+		)
+		ENGINE = MergeTree()
+		PARTITION BY toYYYYMM(created_at)
+		ORDER BY (created_at, user_id, device_id, action)
+		TTL created_at + INTERVAL 6 MONTH
+		SETTINGS index_granularity = 8192`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS device_id String DEFAULT '' AFTER user_id`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS latency Float64 DEFAULT 0 AFTER duration`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS packet_loss Float64 DEFAULT 0 AFTER latency`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS jitter Float64 DEFAULT 0 AFTER packet_loss`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS response_time Int64 DEFAULT 0 AFTER jitter`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS status LowCardinality(String) DEFAULT 'unknown' AFTER response_time`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS cpu Float64 DEFAULT 0 AFTER status`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS memory Float64 DEFAULT 0 AFTER cpu`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS bandwidth_in Float64 DEFAULT 0 AFTER memory`,
+		`ALTER TABLE network_logs ADD COLUMN IF NOT EXISTS bandwidth_out Float64 DEFAULT 0 AFTER bandwidth_in`,
+		`CREATE VIEW IF NOT EXISTS daily_stats AS
+		SELECT
+			toDate(created_at) AS date,
+			user_id,
+			device_id,
+			action,
+			count() AS total_requests,
+			countIf(success = 1) AS success_count,
+			countIf(success = 0) AS fail_count,
+			round(avg(duration), 2) AS avg_duration_ms,
+			max(duration) AS max_duration_ms,
+			round(avgIf(latency, latency > 0), 2) AS avg_latency_ms,
+			round(avgIf(packet_loss, action = 'ping'), 2) AS avg_packet_loss,
+			round(avgIf(jitter, jitter > 0), 2) AS avg_jitter_ms,
+			round(avgIf(response_time, response_time > 0), 2) AS avg_response_time_ms
+		FROM network_logs
+		GROUP BY date, user_id, device_id, action`,
+		`CREATE VIEW IF NOT EXISTS top_targets AS
+		SELECT
+			target,
+			device_id,
+			action,
+			count() AS hits,
+			round(countIf(success = 1) / count() * 100, 2) AS success_rate_pct,
+			round(avg(duration), 2) AS avg_duration_ms,
+			round(avgIf(latency, latency > 0), 2) AS avg_latency_ms,
+			round(avgIf(packet_loss, action = 'ping'), 2) AS avg_packet_loss,
+			anyLast(status) AS last_status
+		FROM network_logs
+		GROUP BY target, device_id, action
+		ORDER BY hits DESC`,
+	}
+
+	for _, statement := range statements {
+		if err := conn.Exec(ctx, statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func ensureMySQLSchemaPatches(db *sqlx.DB, cfg *config.Config) error {
+	if err := ensureMySQLCoreTables(db); err != nil {
+		return err
+	}
 	if err := ensurePushSubscriptionsTable(db); err != nil {
 		return err
 	}
@@ -161,6 +245,114 @@ func ensureMySQLSchemaPatches(db *sqlx.DB, cfg *config.Config) error {
 	return nil
 }
 
+func ensureMySQLCoreTables(db *sqlx.DB) error {
+	statements := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id          VARCHAR(36)  NOT NULL PRIMARY KEY,
+			username    VARCHAR(50)  NOT NULL UNIQUE,
+			email       VARCHAR(100) NOT NULL UNIQUE,
+			password    VARCHAR(255) NOT NULL,
+			role        ENUM('admin','staff','karyawan','teknisi','atasan') NOT NULL DEFAULT 'karyawan',
+			full_name   VARCHAR(100) NOT NULL DEFAULT '',
+			is_active   TINYINT(1)   NOT NULL DEFAULT 1,
+			created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			INDEX idx_role      (role),
+			INDEX idx_is_active (is_active),
+			INDEX idx_email     (email)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+		`CREATE TABLE IF NOT EXISTS feedbacks (
+			id           VARCHAR(36)  NOT NULL PRIMARY KEY,
+			user_id      VARCHAR(36)  NOT NULL,
+			title        VARCHAR(200) NOT NULL,
+			description  TEXT         NOT NULL,
+			category     ENUM('network','hardware','software','other') NOT NULL DEFAULT 'other',
+			status       ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
+			priority     TINYINT      NOT NULL DEFAULT 1 COMMENT '1=low, 2=medium, 3=high',
+			assigned_to  VARCHAR(36)  NULL,
+			response     TEXT         NULL,
+			created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			CONSTRAINT fk_fb_user     FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+			CONSTRAINT fk_fb_assigned FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+			INDEX idx_status   (status),
+			INDEX idx_category (category),
+			INDEX idx_user_id  (user_id),
+			INDEX idx_priority (priority)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+		`CREATE TABLE IF NOT EXISTS devices (
+			id                         VARCHAR(36)  NOT NULL PRIMARY KEY,
+			name                       VARCHAR(100) NOT NULL,
+			host                       VARCHAR(255) NOT NULL,
+			type                       ENUM('server','router','mikrotik','switch','gateway','other') NOT NULL DEFAULT 'other',
+			snmp_version               ENUM('v1','v2c','v3') NOT NULL DEFAULT 'v2c',
+			snmp_community             VARCHAR(100) NOT NULL DEFAULT 'public',
+			snmp_port                  SMALLINT UNSIGNED NOT NULL DEFAULT 161,
+			snmp_timeout               INT NOT NULL DEFAULT 5,
+			http_url                   VARCHAR(500) NOT NULL DEFAULT '',
+			http_timeout               INT NOT NULL DEFAULT 10,
+			monitor_enabled            TINYINT(1) NOT NULL DEFAULT 1,
+			ping_enabled               TINYINT(1) NOT NULL DEFAULT 1,
+			snmp_enabled               TINYINT(1) NOT NULL DEFAULT 0,
+			http_enabled               TINYINT(1) NOT NULL DEFAULT 0,
+			check_interval_seconds     INT NOT NULL DEFAULT 60,
+			ping_interval_seconds      INT NOT NULL DEFAULT 60,
+			snmp_interval_seconds      INT NOT NULL DEFAULT 60,
+			http_interval_seconds      INT NOT NULL DEFAULT 60,
+			packet_loss_warning        DECIMAL(8,2) NOT NULL DEFAULT 5.00,
+			packet_loss_critical       DECIMAL(8,2) NOT NULL DEFAULT 20.00,
+			latency_warning_ms         DECIMAL(10,2) NOT NULL DEFAULT 150.00,
+			latency_critical_ms        DECIMAL(10,2) NOT NULL DEFAULT 500.00,
+			response_time_warning_ms   DECIMAL(10,2) NOT NULL DEFAULT 1000.00,
+			response_time_critical_ms  DECIMAL(10,2) NOT NULL DEFAULT 3000.00,
+			last_status                ENUM('unknown','up','warning','critical','down') NOT NULL DEFAULT 'unknown',
+			last_checked_at            DATETIME NULL,
+			last_ping_checked_at       DATETIME NULL,
+			last_snmp_checked_at       DATETIME NULL,
+			last_http_checked_at       DATETIME NULL,
+			is_active                  TINYINT(1) NOT NULL DEFAULT 1,
+			created_at                 DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at                 DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			INDEX idx_device_host      (host),
+			INDEX idx_device_type      (type),
+			INDEX idx_monitor_enabled  (monitor_enabled),
+			INDEX idx_last_status      (last_status),
+			INDEX idx_is_active        (is_active)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+		`CREATE TABLE IF NOT EXISTS alerts (
+			id              VARCHAR(36) NOT NULL PRIMARY KEY,
+			device_id       VARCHAR(36) NOT NULL,
+			severity        ENUM('info','warning','critical') NOT NULL DEFAULT 'warning',
+			status          ENUM('open','acknowledged','resolved') NOT NULL DEFAULT 'open',
+			metric          VARCHAR(50) NOT NULL,
+			threshold_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+			actual_value    DECIMAL(12,2) NOT NULL DEFAULT 0,
+			message         VARCHAR(500) NOT NULL,
+			notes           TEXT NULL,
+			created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			acknowledged_at DATETIME NULL,
+			resolved_at     DATETIME NULL,
+			CONSTRAINT fk_alert_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+			INDEX idx_alert_device  (device_id),
+			INDEX idx_alert_status  (status),
+			INDEX idx_alert_severity(severity),
+			INDEX idx_alert_metric  (metric),
+			INDEX idx_alert_created (created_at)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+	}
+
+	for _, statement := range statements {
+		if _, err := db.Exec(statement); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func ensurePushSubscriptionsTable(db *sqlx.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -178,7 +370,7 @@ func ensurePushSubscriptionsTable(db *sqlx.DB) error {
 			UNIQUE KEY uniq_push_endpoint_hash (endpoint_hash),
 			INDEX idx_push_user (user_id),
 			INDEX idx_push_updated (updated_at)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 	)
 	return err
 }

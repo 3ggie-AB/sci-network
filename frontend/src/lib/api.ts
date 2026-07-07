@@ -1,5 +1,15 @@
 // Lightweight API client for SCINetwork backend
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:3434";
+const BASE = resolveApiBase();
+
+function resolveApiBase() {
+  const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:3535`;
+  }
+  return "http://localhost:3535";
+}
 
 const TOKEN_KEY = "scinetwork.token";
 const USER_KEY = "scinetwork.user";
