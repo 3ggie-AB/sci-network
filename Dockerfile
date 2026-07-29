@@ -7,7 +7,7 @@ COPY frontend/package.json frontend/bun.lock* ./
 RUN npm install --legacy-peer-deps
 
 COPY frontend .
-RUN npm run build
+RUN npm run build && cp index.html .output/public/index.html
 
 # ── Stage 2: Build Backend (Go Fiber) ──────────────────────────────────────────
 FROM golang:1.22-alpine AS backend-builder
