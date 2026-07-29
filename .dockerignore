@@ -1,0 +1,9 @@
+.git
+.gitignore
+.dockerignore
+**/node_modules
+**/dist
+**/.tanstack
+**/tmp
+*.log
+backend/bin

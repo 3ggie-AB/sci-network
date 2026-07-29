@@ -91,12 +91,38 @@ func main() {
 	// ── 7. Register Routes ────────────────────────────────────────────────────
 	handler.SetupRoutes(app)
 
+	// ── 8. Serve Frontend Static Files ───────────────────────────────────────
+	publicDir := "./public"
+	if envPublic := os.Getenv("PUBLIC_DIR"); envPublic != "" {
+		publicDir = envPublic
+	}
+	if _, err := os.Stat(publicDir); err == nil {
+		app.Static("/", publicDir, fiber.Static{
+			Compress:  true,
+			ByteRange: true,
+			Browse:    false,
+			Index:     "index.html",
+		})
+
+		// SPA Fallback: untuk client-side routing, kirim index.html untuk request GET non-API
+		app.Use(func(c *fiber.Ctx) error {
+			if c.Method() == fiber.MethodGet && (len(c.Path()) < 4 || c.Path()[:4] != "/api") {
+				return c.SendFile(publicDir + "/index.html")
+			}
+			return c.Next()
+		})
+	}
+
 	// 404 handler
 	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": fmt.Sprintf("Route %s %s tidak ditemukan", c.Method(), c.Path()),
-		})
+		if len(c.Path()) >= 4 && c.Path()[:4] == "/api" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": fmt.Sprintf("API Route %s %s tidak ditemukan", c.Method(), c.Path()),
+			})
+		}
+		return c.Status(fiber.StatusNotFound).SendString("404 Not Found")
 	})
+
 
 	// ── 8. Start Server (graceful shutdown) ───────────────────────────────────
 	quit := make(chan os.Signal, 1)

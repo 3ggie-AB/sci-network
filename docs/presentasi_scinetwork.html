@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCINetwork – Presentasi Progress Proyek</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --accent: #06b6d4;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #334155;
+    --gradient-1: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+    --gradient-2: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ── Slide Container ──────────────────────────────────────────────── */
+  .slides-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    flex-direction: column;
+    padding: 48px 64px;
+    overflow-y: auto;
+    background: var(--bg-dark);
+  }
+
+  .slide.active { display: flex; }
+
+  /* ── Slide 0: Cover ───────────────────────────────────────────────── */
+  .slide-cover {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: radial-gradient(ellipse at 30% 50%, rgba(37,99,235,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(6,182,212,0.1) 0%, transparent 50%),
+                var(--bg-dark);
+    position: relative;
+  }
+  .slide-cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Cpath d='M60 0 H0 V60' fill='none' stroke='%23334155' stroke-width='0.3'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grid)'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+  .cover-content { position: relative; z-index: 1; }
+  .cover-badge {
+    display: inline-block;
+    background: var(--gradient-1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 20px;
+    border-radius: 50px;
+    margin-bottom: 24px;
+  }
+  .cover-title {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .cover-subtitle {
+    font-size: 20px;
+    color: var(--text-secondary);
+    max-width: 700px;
+    margin: 0 auto 32px;
+    line-height: 1.5;
+  }
+  .cover-meta {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .cover-meta strong { color: var(--accent); }
+
+  /* ── Common Slide Header ──────────────────────────────────────────── */
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-shrink: 0;
+  }
+  .slide-num {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--gradient-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .slide-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .slide-title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── Content Layout ───────────────────────────────────────────────── */
+  .slide-body { flex: 1; overflow-y: auto; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ── Cards ─────────────────────────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .card p, .card li {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .card ul { padding-left: 18px; }
+  .card ul li { margin-bottom: 4px; }
+
+  /* ── Tags / Badges ─────────────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 50px;
+    margin: 2px;
+  }
+  .tag-blue { background: rgba(37,99,235,0.2); color: #60a5fa; }
+  .tag-green { background: rgba(16,185,129,0.2); color: #34d399; }
+  .tag-orange { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .tag-red { background: rgba(239,68,68,0.2); color: #f87171; }
+  .tag-cyan { background: rgba(6,182,212,0.2); color: #22d3ee; }
+  .tag-purple { background: rgba(139,92,246,0.2); color: #a78bfa; }
+
+  /* ── Progress Bar ──────────────────────────────────────────────────── */
+  .progress-bar-wrapper {
+    width: 100%;
+    height: 28px;
+    background: var(--bg-card);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 16px 0;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gradient-1);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: width 0.8s ease;
+  }
+
+  /* ── Table ──────────────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(51,65,85,0.5);
+  }
+  tr:hover td { background: rgba(37,99,235,0.05); }
+
+  /* ── Status Dot ────────────────────────────────────────────────────── */
+  .status-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .dot-done { background: var(--accent-green); }
+  .dot-progress { background: var(--accent-orange); animation: pulse 1.5s infinite; }
+  .dot-pending { background: var(--text-muted); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ── Timeline ──────────────────────────────────────────────────────── */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-item {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -24px; top: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: var(--bg-dark);
+  }
+  .tl-item.done::before { background: var(--accent-green); border-color: var(--accent-green); }
+  .tl-item.current::before { background: var(--accent-orange); border-color: var(--accent-orange); animation: pulse 1.5s infinite; }
+  .tl-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .tl-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ── Stat Box ──────────────────────────────────────────────────────── */
+  .stat-box {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .stat-value {
+    font-size: 42px;
+    font-weight: 900;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── Checklist ─────────────────────────────────────────────────────── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(51,65,85,0.3);
+  }
+  .check-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .check-done { background: var(--accent-green); color: #fff; }
+  .check-pending { background: transparent; border: 2px solid var(--text-muted); }
+
+  /* ── Architecture Diagram ──────────────────────────────────────────── */
+  .arch-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .arch-box {
+    padding: 14px 20px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 120px;
+    border: 1px solid var(--border);
+  }
+  .arch-arrow {
+    font-size: 20px;
+    color: var(--text-muted);
+  }
+
+  /* ── Navigation ────────────────────────────────────────────────────── */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(15,23,42,0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    z-index: 100;
+  }
+  .nav-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--primary); border-color: var(--primary); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .nav-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .nav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-dot.active { background: var(--primary); transform: scale(1.4); }
+
+  /* ── Responsive ────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .slide { padding: 24px 24px 72px; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .cover-title { font-size: 36px; }
+    .stat-value { font-size: 30px; }
+  }
+
+  /* Highlight emphasis text */
+  em { color: var(--accent); font-style: normal; font-weight: 600; }
+  strong { color: var(--text-primary); }
+
+  .highlight-box {
+    background: rgba(37,99,235,0.1);
+    border-left: 3px solid var(--primary);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .icon-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .icon-circle {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .gantt-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+  .gantt-bar-track {
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(51,65,85,0.5);
+    position: relative;
+  }
+  .gantt-bar {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="slides-container" id="slidesContainer">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 0: COVER -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide slide-cover active" data-index="0">
+  <div class="cover-content">
+    <div class="cover-badge">Laporan Progress Proyek</div>
+    <h1 class="cover-title">SCINetwork</h1>
+    <p class="cover-subtitle">
+      Implementasi Sistem Monitoring dan Deteksi Dini Gangguan Jaringan
+      di Lingkungan Kantor Syntax
+    </p>
+    <p class="cover-meta">
+      Tanggal: <strong>24 Juli 2026</strong> &nbsp;·&nbsp;
+      Metode: <strong>Design Science Research (DSR)</strong> &nbsp;·&nbsp;
+      Instansi: <strong>Kantor Syntax</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 1: DESKRIPSI PROYEK -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="1">
+  <div class="slide-header">
+    <div class="slide-num">A</div>
+    <div>
+      <div class="slide-label">Poin A</div>
+      <div class="slide-title">Deskripsi Proyek</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Identitas Proyek</div>
+        <h3>SCINetwork</h3>
+        <p><strong>Nama Lengkap:</strong> Implementasi SCINetwork sebagai Sistem Monitoring dan Deteksi Dini Gangguan Jaringan di Lingkungan Kantor Syntax</p>
+        <br>
+        <p><strong>Tujuan Utama:</strong></p>
+        <ul>
+          <li>Membangun dashboard monitoring jaringan real-time</li>
+          <li>Mendeteksi gangguan secara proaktif melalui alert otomatis</li>
+          <li>Menyediakan deteksi anomali berbasis Machine Learning (Isolation Forest)</li>
+          <li>Mengurangi waktu deteksi gangguan dari pola reaktif ke proaktif</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">User / Stakeholder</div>
+        <table>
+          <tr><th>Role</th><th>Kebutuhan</th></tr>
+          <tr><td><em>Admin IT</em></td><td>Kelola user, perangkat, log, konfigurasi sistem</td></tr>
+          <tr><td><em>Teknisi IT</em></td><td>Pantau perangkat, network tools, tindak lanjut alert</td></tr>
+          <tr><td><em>Direksi</em></td><td>Ringkasan kondisi jaringan, tren gangguan</td></tr>
+          <tr><td><em>Head Divisi</em></td><td>Status jaringan di area divisinya</td></tr>
+          <tr><td><em>Talent</em></td><td>Kirim feedback/keluhan jaringan</td></tr>
+        </table>
+        <br>
+        <p><strong>Instansi:</strong> Kantor Syntax — digunakan oleh divisi Marketing, IT, Keuangan, HR, Operasional, dan Direksi</p>
+      </div>
+    </div>
+    <div class="highlight-box" style="margin-top:20px">
+      <strong>Masalah yang Diselesaikan:</strong> Tim IT Kantor Syntax sering mengetahui gangguan jaringan <em>setelah talent melaporkan keluhan</em>, bukan dari sistem monitoring otomatis. SCINetwork hadir sebagai solusi untuk monitoring proaktif berbasis data.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 2: PERSENTASE PROGRESS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="2">
+  <div class="slide-header">
+    <div class="slide-num">B</div>
+    <div>
+      <div class="slide-label">Poin B</div>
+      <div class="slide-title">Persentase Progress</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="three-col" style="margin-bottom:24px">
+      <div class="stat-box">
+        <div class="stat-value">85%</div>
+        <div class="stat-label">Progress Keseluruhan</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">9</div>
+        <div class="stat-label">Modul Selesai</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">2</div>
+        <div class="stat-label">On-Progress</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrapper">
+      <div class="progress-bar-fill" style="width:85%">85%</div>
+    </div>
+
+    <div class="two-col" style="margin-top:20px">
+      <div class="card">
+        <div class="card-title">✅ Fixed (Selesai)</div>
+        <ul class="checklist">
+          <li><span class="check-icon check-done">✓</span> Backend API (Go Fiber) — Seluruh endpoint</li>
+          <li><span class="check-icon check-done">✓</span> Database MySQL — Skema & migrasi</li>
+          <li><span class="check-icon check-done">✓</span> Database ClickHouse — Log monitoring</li>
+          <li><span class="check-icon check-done">✓</span> Autentikasi JWT + RBAC (5 role)</li>
+          <li><span class="check-icon check-done">✓</span> Dashboard Frontend React</li>
+          <li><span class="check-icon check-done">✓</span> Monitoring: Ping, SNMP, HTTP Checker</li>
+          <li><span class="check-icon check-done">✓</span> Scheduler otomatis + alert threshold</li>
+          <li><span class="check-icon check-done">✓</span> Browser Push Notification</li>
+          <li><span class="check-icon check-done">✓</span> Modul Feedback/Keluhan Talent</li>
+          <li><span class="check-icon check-done">✓</span> ML Isolation Forest (training + sidecar)</li>
+          <li><span class="check-icon check-done">✓</span> Docker Compose deployment</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">🔄 On-Progress</div>
+        <ul class="checklist">
+          <li><span class="check-icon check-pending">○</span> Pengujian fungsional lengkap (10 skenario FT)</li>
+          <li><span class="check-icon check-pending">○</span> UAT — Kuesioner penerimaan pengguna</li>
+          <li><span class="check-icon check-pending">○</span> Kalibrasi threshold berdasarkan observasi</li>
+          <li><span class="check-icon check-pending">○</span> Dokumentasi API & laporan akhir</li>
+        </ul>
+        <div class="highlight-box" style="margin-top:16px">
+          Seluruh fitur inti sudah diimplementasikan. Saat ini sedang memasuki fase <em>evaluasi dan dokumentasi</em> dalam framework DSR.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 3: METODOLOGI PENGEMBANGAN -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="3">
+  <div class="slide-header">
+    <div class="slide-num">C</div>
+    <div>
+      <div class="slide-label">Poin C</div>
+      <div class="slide-title">Metodologi Pengembangan</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Metode: Design Science Research (DSR)</div>
+        <p>Proyek ini menggunakan metode <em>Design Science Research</em> yang terdiri dari 6 tahap sistematis untuk merancang, membangun, dan mengevaluasi artefak sistem informasi.</p>
+        <br>
+        <div class="highlight-box">
+          <strong>Alasan Ilmiah Memilih DSR:</strong><br>
+          <ul style="margin-top:8px; padding-left:18px;">
+            <li>Penelitian berfokus pada <em>perancangan artefak</em> (sistem monitoring), bukan pengujian teori murni</li>
+            <li>Masalah yang diselesaikan bersifat <em>design problem</em> — membutuhkan solusi teknologi baru</li>
+            <li>DSR menyediakan kerangka evaluasi yang ketat: metrik teknis <em>dan</em> penerimaan pengguna</li>
+            <li>Sesuai dengan nature proyek yang menghasilkan software sebagai artefak penelitian</li>
+            <li>Mendukung iterasi antara desain dan evaluasi, berbeda dari waterfall murni</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">6 Tahap DSR</div>
+        <div class="timeline">
+          <div class="tl-item done">
+            <div class="tl-label">Tahap 1: Identifikasi Masalah</div>
+            <div class="tl-desc">Observasi monitoring reaktif, analisis kebutuhan stakeholder</div>
+          </div>
+          <div class="tl-item done">
+            <div class="tl-label">Tahap 2: Penetapan Tujuan</div>
+            <div class="tl-desc">Kriteria sukses terukur, prioritas fitur</div>
+          </div>
+          <div class="tl-item done">
+            <div class="tl-label">Tahap 3: Desain & Pengembangan</div>
+            <div class="tl-desc">Arsitektur, coding backend/frontend/ML — SELESAI</div>
+          </div>
+          <div class="tl-item done">
+            <div class="tl-label">Tahap 4: Demonstrasi</div>
+            <div class="tl-desc">Demo perangkat, simulasi gangguan, alert</div>
+          </div>
+          <div class="tl-item current">
+            <div class="tl-label">Tahap 5: Evaluasi ← SAAT INI</div>
+            <div class="tl-desc">Pengujian fungsional, metrik teknis, kuesioner UAT</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-label">Tahap 6: Komunikasi</div>
+            <div class="tl-desc">Laporan akhir, presentasi stakeholder</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 4: TRACKING TAHAPAN DSR -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="4">
+  <div class="slide-header">
+    <div class="slide-num">D</div>
+    <div>
+      <div class="slide-label">Poin D & E</div>
+      <div class="slide-title">Tracking Tahapan DSR</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="highlight-box" style="margin-bottom:20px">
+      <strong>Catatan:</strong> DSR bukan Waterfall maupun Agile murni. DSR adalah metode riset yang memiliki 6 tahap tersendiri. Proyek ini berada di <em>Tahap 5: Evaluasi</em>.
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Progress Tahapan DSR (Gantt Chart)</div>
+      <div class="gantt-row">
+        <div class="gantt-label">Identifikasi</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:100%; background:var(--accent-green)">Minggu 1 ✓</div></div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Tujuan</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:100%; background:var(--accent-green)">Minggu 1 ✓</div></div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Desain & Dev</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:100%; background:var(--accent-green)">Minggu 2–5 ✓</div></div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Demonstrasi</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:100%; background:var(--accent-green)">Minggu 5 ✓</div></div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Evaluasi</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:70%; background:var(--accent-orange)">Minggu 6–7 🔄</div></div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Komunikasi</div>
+        <div class="gantt-bar-track"><div class="gantt-bar" style="width:30%; background:var(--accent-orange)">Minggu 7–8 🔄</div></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Bukti Tahap Desain & Pengembangan Selesai</div>
+        <ul>
+          <li><strong>Backend:</strong> 9 handler files, 6 service modules, repository layer — Go Fiber</li>
+          <li><strong>Frontend:</strong> 13 route files, dashboard overview, devices, alerts, logs, feedbacks, users, network tools</li>
+          <li><strong>Database:</strong> MySQL (5 tabel) + ClickHouse (1 tabel + 2 views)</li>
+          <li><strong>ML:</strong> Isolation Forest training (588 baris) + Sidecar API (239 baris)</li>
+          <li><strong>Infrastructure:</strong> Docker Compose (4 services), Dockerfile backend & ML</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Bukti Tahap Evaluasi (Sedang Berjalan)</div>
+        <ul>
+          <li>10 skenario pengujian fungsional (FT-01 s.d. FT-10) sudah dirancang</li>
+          <li>8 metrik teknis sudah didefinisikan (Time to Detect, Alert Accuracy, Log Completeness, dll.)</li>
+          <li>Kuesioner UAT sudah disiapkan (10 pertanyaan teknisi, 5 pertanyaan talent)</li>
+          <li>Instrumen observasi teknis sudah disusun</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 5: CAPAIAN FITUR BERHASIL -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="5">
+  <div class="slide-header">
+    <div class="slide-num">F</div>
+    <div>
+      <div class="slide-label">Poin F</div>
+      <div class="slide-title">Capaian Fitur Berhasil</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="three-col" style="margin-bottom:20px">
+      <div class="stat-box">
+        <div class="stat-value">40+</div>
+        <div class="stat-label">API Endpoints</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">13</div>
+        <div class="stat-label">Frontend Pages</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">5</div>
+        <div class="stat-label">User Roles</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Modul Backend (Go Fiber)</div>
+        <table>
+          <tr><th>Modul</th><th>Status</th><th>Deskripsi</th></tr>
+          <tr><td>Auth</td><td><span class="tag tag-green">Done</span></td><td>Login, Register, JWT, RBAC 5-role</td></tr>
+          <tr><td>User Management</td><td><span class="tag tag-green">Done</span></td><td>CRUD users, role management</td></tr>
+          <tr><td>Device Management</td><td><span class="tag tag-green">Done</span></td><td>CRUD perangkat, config monitoring</td></tr>
+          <tr><td>Monitoring Ping</td><td><span class="tag tag-green">Done</span></td><td>ICMP ping, latency, jitter, packet loss</td></tr>
+          <tr><td>Monitoring SNMP</td><td><span class="tag tag-green">Done</span></td><td>SNMPv1/v2c/v3, OID query</td></tr>
+          <tr><td>Monitoring HTTP</td><td><span class="tag tag-green">Done</span></td><td>HTTP checker, response time, status</td></tr>
+          <tr><td>Scheduler</td><td><span class="tag tag-green">Done</span></td><td>Auto-monitor per interval, per-device config</td></tr>
+          <tr><td>Alert System</td><td><span class="tag tag-green">Done</span></td><td>Threshold, severity, ack/resolve, notes</td></tr>
+          <tr><td>Push Notification</td><td><span class="tag tag-green">Done</span></td><td>Web Push API, VAPID keys</td></tr>
+          <tr><td>Feedback</td><td><span class="tag tag-green">Done</span></td><td>Keluhan talent, status, assign, respond</td></tr>
+          <tr><td>Network Logs</td><td><span class="tag tag-green">Done</span></td><td>ClickHouse time-series, stats, history</td></tr>
+          <tr><td>Interface Monitor</td><td><span class="tag tag-green">Done</span></td><td>Local network interface checking</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Modul Frontend (React + TanStack)</div>
+        <table>
+          <tr><th>Halaman</th><th>Status</th></tr>
+          <tr><td>Landing Page</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Login & Register</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Dashboard Overview</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Device Management</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Alerts Management</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Network Logs</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Network Tools</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Feedbacks</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>User Management</td><td><span class="tag tag-green">Done</span></td></tr>
+        </table>
+        <br>
+        <div class="card-title">Modul ML (Python)</div>
+        <table>
+          <tr><th>Komponen</th><th>Status</th></tr>
+          <tr><td>Training Isolation Forest</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Sidecar Inference API</td><td><span class="tag tag-green">Done</span></td></tr>
+          <tr><td>Daily Training Script</td><td><span class="tag tag-green">Done</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 6: KENDALA FITUR TERTUNDA -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="6">
+  <div class="slide-header">
+    <div class="slide-num">G</div>
+    <div>
+      <div class="slide-label">Poin G</div>
+      <div class="slide-title">Kendala Fitur Tertunda</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Fitur/Bagian yang Belum Selesai</div>
+        <table>
+          <tr><th>Item</th><th>Status</th><th>Bottleneck</th><th>Target</th></tr>
+          <tr>
+            <td><strong>Pengujian Fungsional Lengkap</strong></td>
+            <td><span class="tag tag-orange">On-Progress</span></td>
+            <td>Perlu simulasi gangguan jaringan real di lingkungan kantor</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><strong>UAT / Kuesioner Penerimaan</strong></td>
+            <td><span class="tag tag-orange">On-Progress</span></td>
+            <td>Menunggu sistem di-deploy di environment kantor agar stakeholder bisa menguji</td>
+            <td>Minggu ke-7–8</td>
+          </tr>
+          <tr>
+            <td><strong>Kalibrasi Threshold</strong></td>
+            <td><span class="tag tag-orange">On-Progress</span></td>
+            <td>Butuh data observasi 1–2 minggu untuk menentukan threshold optimal</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><strong>Integrasi Webhook/Telegram/Email</strong></td>
+            <td><span class="tag tag-red">Deferred</span></td>
+            <td>Di luar scope inti; sudah ada Push Notification sebagai notifikasi utama</td>
+            <td>Post-project</td>
+          </tr>
+          <tr>
+            <td><strong>Dokumentasi API Lengkap</strong></td>
+            <td><span class="tag tag-orange">On-Progress</span></td>
+            <td>Perlu penyusunan dokumentasi endpoint dari 40+ API</td>
+            <td>Minggu ke-8</td>
+          </tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Analisis Bottleneck Utama</div>
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(245,158,11,0.2); color:#fbbf24;">⚠</div>
+          <div>
+            <strong>Deployment ke Environment Kantor</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Pengujian dan UAT membutuhkan sistem berjalan di jaringan real Kantor Syntax agar stakeholder (teknisi, head divisi, talent) dapat mengakses dan menguji langsung.</p>
+          </div>
+        </div>
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(245,158,11,0.2); color:#fbbf24;">⚠</div>
+          <div>
+            <strong>Data Historis untuk ML Training</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Model Isolation Forest membutuhkan data monitoring historis yang cukup. Saat ini menggunakan data simulasi; perlu data real setelah deployment.</p>
+          </div>
+        </div>
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(245,158,11,0.2); color:#fbbf24;">⚠</div>
+          <div>
+            <strong>Koordinasi Responden UAT</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Kuesioner penerimaan membutuhkan partisipasi teknisi IT, admin, head divisi, dan talent dari berbagai divisi.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 7: MANAJEMEN PERUBAHAN -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="7">
+  <div class="slide-header">
+    <div class="slide-num">H</div>
+    <div>
+      <div class="slide-label">Poin H</div>
+      <div class="slide-title">Manajemen Perubahan (Requirement Change)</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Perubahan Requirement Selama Proyek</div>
+        <table>
+          <tr><th>#</th><th>Perubahan</th><th>Sumber</th><th>Dampak Arsitektur</th></tr>
+          <tr>
+            <td>1</td>
+            <td><strong>Penambahan per-device interval</strong><br>Setiap perangkat bisa punya interval ping, SNMP, HTTP berbeda</td>
+            <td>Kebutuhan operasional</td>
+            <td>ALTER TABLE devices menambah 6 kolom interval baru; scheduler dikembangkan menjadi <em>per-device scheduling</em></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>Penambahan Interface Monitor</strong><br>Monitor interface jaringan lokal server</td>
+            <td>Pembimbing</td>
+            <td>Tambah handler, service modul interface.go (5937 byte), endpoint baru di routes</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Metrik enrichment di ClickHouse</strong><br>Penambahan kolom cpu, memory, bandwidth_in/out, status</td>
+            <td>Kebutuhan ML</td>
+            <td>ALTER TABLE network_logs menambah 5 kolom; update model features di ML pipeline</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>Device status enum expansion</strong><br>Dari 4 status ke 5 (unknown, up, warning, critical, down)</td>
+            <td>Feedback teknisi</td>
+            <td>ALTER TABLE devices MODIFY last_status; data migration di mysql.sql</td>
+          </tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Strategi Adaptasi Arsitektur</div>
+        <div class="highlight-box">
+          Arsitektur SCINetwork dirancang modular sehingga perubahan requirement dapat diakomodasi tanpa refaktor besar-besaran.
+        </div>
+        <br>
+        <p><strong>Prinsip desain yang membantu:</strong></p>
+        <ul>
+          <li><em>Layered architecture</em> — handler → service → repository terpisah</li>
+          <li><em>Dual-database</em> — MySQL untuk data operasional, ClickHouse untuk log (masing-masing bisa di-ALTER independen)</li>
+          <li><em>ML sidecar</em> — Modul ML terpisah dari backend utama, komunikasi via HTTP API</li>
+          <li><em>Docker Compose</em> — Setiap service dikelola independen, mudah rebuild</li>
+          <li><em>RBAC permission-based</em> — Penambahan fitur baru cukup tambah permission baru tanpa ubah middleware</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 8: IDENTIFIKASI MASALAH UTAMA -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="8">
+  <div class="slide-header">
+    <div class="slide-num">I</div>
+    <div>
+      <div class="slide-label">Poin I</div>
+      <div class="slide-title">Identifikasi Masalah Utama</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Kendala Terbesar</div>
+
+        <div class="icon-text" style="margin-top:12px">
+          <div class="icon-circle" style="background:rgba(239,68,68,0.2); color:#f87171;">🔧</div>
+          <div>
+            <strong>1. Teknis: ICMP Ping Membutuhkan Privilege</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Go ICMP ping membutuhkan <code>CAP_NET_RAW</code>. Di Docker harus ditambahkan <code>cap_add: NET_RAW</code>. Di bare-metal perlu run as root atau setcap.</p>
+          </div>
+        </div>
+
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(239,68,68,0.2); color:#f87171;">🔧</div>
+          <div>
+            <strong>2. Teknis: SNMP Tidak Aktif di Semua Perangkat</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Beberapa perangkat jaringan kantor belum mengaktifkan SNMP, sehingga fallback ke ping/HTTP diperlukan. Mitigasi: SNMP diaktifkan bertahap.</p>
+          </div>
+        </div>
+
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(245,158,11,0.2); color:#fbbf24;">📊</div>
+          <div>
+            <strong>3. Keterbatasan Data: ML Training Awal</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Model Isolation Forest membutuhkan volume data monitoring yang cukup. Pada awal deployment, data historis belum tersedia. Solusi: data simulasi + daily re-training otomatis.</p>
+          </div>
+        </div>
+
+        <div class="icon-text">
+          <div class="icon-circle" style="background:rgba(139,92,246,0.2); color:#a78bfa;">🔗</div>
+          <div>
+            <strong>4. Integrasi: Multi-database Consistency</strong>
+            <p style="font-size:13px; color:var(--text-muted)">Menjaga konsistensi antara MySQL (data operasional) dan ClickHouse (log). Solved: write-through pattern di service layer.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Solusi yang Diimplementasikan</div>
+        <table>
+          <tr><th>Masalah</th><th>Solusi</th><th>Status</th></tr>
+          <tr>
+            <td>ICMP privilege</td>
+            <td>Docker CAP_NET_RAW, Makefile helper</td>
+            <td><span class="tag tag-green">Solved</span></td>
+          </tr>
+          <tr>
+            <td>SNMP tidak aktif</td>
+            <td>Fallback ping/HTTP; SNMP optional per device</td>
+            <td><span class="tag tag-green">Solved</span></td>
+          </tr>
+          <tr>
+            <td>Data ML kurang</td>
+            <td>Simulasi data + daily re-training via cron</td>
+            <td><span class="tag tag-green">Solved</span></td>
+          </tr>
+          <tr>
+            <td>Multi-DB consistency</td>
+            <td>Write-through di service layer</td>
+            <td><span class="tag tag-green">Solved</span></td>
+          </tr>
+          <tr>
+            <td>Threshold kalibrasi</td>
+            <td>Konfigurasi per-device, observasi 1–2 minggu</td>
+            <td><span class="tag tag-orange">In Progress</span></td>
+          </tr>
+        </table>
+
+        <div class="highlight-box" style="margin-top:16px">
+          <strong>Kategori kendala dominan:</strong> <em>Teknis pemrograman</em> dan <em>keterbatasan data</em>. Bukan kendala komunikasi tim karena proyek dikerjakan secara individual/tim kecil.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 9: RENCANA AKSI -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="9">
+  <div class="slide-header">
+    <div class="slide-num">J</div>
+    <div>
+      <div class="slide-label">Poin J</div>
+      <div class="slide-title">Rencana Aksi (Next Action Plan)</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Prioritas Kerja & Estimasi Waktu</div>
+        <table>
+          <tr><th>Prioritas</th><th>Aktivitas</th><th>Durasi</th><th>Target</th></tr>
+          <tr>
+            <td><span class="tag tag-red">P0</span></td>
+            <td><strong>Deploy ke environment kantor</strong><br>Docker Compose di server IT</td>
+            <td>1–2 hari</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-red">P0</span></td>
+            <td><strong>Pengujian fungsional (FT-01 s.d. FT-10)</strong><br>Simulasi gangguan, validasi alert</td>
+            <td>3–4 hari</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-orange">P1</span></td>
+            <td><strong>Kalibrasi threshold</strong><br>Observasi data real, tune packet loss/latency/response time</td>
+            <td>5–7 hari</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-orange">P1</span></td>
+            <td><strong>ML re-training dari data real</strong><br>Jalankan daily training setelah log terkumpul</td>
+            <td>3–5 hari</td>
+            <td>Minggu ke-7</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-blue">P2</span></td>
+            <td><strong>UAT & Kuesioner</strong><br>Distribusi ke 5 kategori stakeholder</td>
+            <td>3–5 hari</td>
+            <td>Minggu ke-7–8</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-blue">P2</span></td>
+            <td><strong>Dokumentasi API & Laporan</strong><br>Penyusunan laporan akhir</td>
+            <td>5–7 hari</td>
+            <td>Minggu ke-8</td>
+          </tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Timeline Minggu ke-7 & ke-8</div>
+        <div class="gantt-row">
+          <div class="gantt-label">Deploy</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:25%; background:#ef4444">2 hari</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Testing FT</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:35%; margin-left:20%; background:#ef4444">4 hari</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Kalibrasi</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:60%; margin-left:15%; background:#f59e0b">7 hari</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">ML Retrain</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:40%; margin-left:25%; background:#f59e0b">5 hari</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">UAT</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:40%; margin-left:40%; background:#2563eb">5 hari</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Dokumentasi</div>
+          <div class="gantt-bar-track"><div class="gantt-bar" style="width:50%; margin-left:50%; background:#2563eb">7 hari</div></div>
+        </div>
+
+        <div class="highlight-box" style="margin-top:20px">
+          <strong>Estimasi penyelesaian:</strong> Seluruh deliverables ditargetkan selesai dalam <em>2 minggu (14 hari kerja)</em> ke depan. Proyek tetap on-track dengan durasi 6–8 minggu yang direncanakan.
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="card-title">Kriteria Sukses yang Dikejar</div>
+          <ul>
+            <li>Time to Detect ≤ 1 interval scheduler</li>
+            <li>Alert Accuracy ≥ 90%</li>
+            <li>Dashboard Load Time ≤ 3 detik</li>
+            <li>Log Completeness ≥ 95%</li>
+            <li>UAT Score ≥ 4/5</li>
+            <li>ML Detection Rate ≥ 80%</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 10: ARSITEKTUR SISTEM -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide" data-index="10">
+  <div class="slide-header">
+    <div class="slide-num">+</div>
+    <div>
+      <div class="slide-label">Lampiran</div>
+      <div class="slide-title">Arsitektur Sistem & Tech Stack</div>
+    </div>
+  </div>
+  <div class="slide-body">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Arsitektur SCINetwork</div>
+      <div class="arch-diagram">
+        <div class="arch-box" style="background:rgba(37,99,235,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">🖥️</div>
+          <strong>Frontend</strong><br>React + TanStack<br>
+          <span class="tag tag-blue">Vite</span>
+          <span class="tag tag-blue">Tailwind</span>
+          <span class="tag tag-blue">Recharts</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(16,185,129,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">⚡</div>
+          <strong>Backend API</strong><br>Go Fiber v2<br>
+          <span class="tag tag-green">JWT</span>
+          <span class="tag tag-green">RBAC</span>
+          <span class="tag tag-green">REST</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(139,92,246,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">🗄️</div>
+          <strong>Databases</strong><br>
+          <span class="tag tag-purple">MySQL 8</span><br>
+          <span class="tag tag-cyan">ClickHouse</span>
+        </div>
+      </div>
+      <div class="arch-diagram" style="margin-top:8px">
+        <div class="arch-box" style="background:rgba(6,182,212,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">📡</div>
+          <strong>Monitor Services</strong><br>
+          <span class="tag tag-cyan">Ping/ICMP</span>
+          <span class="tag tag-cyan">SNMP</span>
+          <span class="tag tag-cyan">HTTP</span>
+          <span class="tag tag-cyan">Interface</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(245,158,11,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">🔔</div>
+          <strong>Alert & Notification</strong><br>
+          <span class="tag tag-orange">Threshold</span>
+          <span class="tag tag-orange">Web Push</span>
+          <span class="tag tag-orange">VAPID</span>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box" style="background:rgba(239,68,68,0.15)">
+          <div style="font-size:20px; margin-bottom:4px;">🤖</div>
+          <strong>ML Sidecar</strong><br>Python FastAPI<br>
+          <span class="tag tag-red">Isolation Forest</span>
+          <span class="tag tag-red">scikit-learn</span>
+        </div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Tech Stack Detail</div>
+        <table>
+          <tr><th>Layer</th><th>Teknologi</th></tr>
+          <tr><td>Frontend</td><td>React 19, TanStack Router/Query, Vite 7, TailwindCSS 4, Recharts, shadcn/ui (Radix)</td></tr>
+          <tr><td>Backend</td><td>Go 1.22, Fiber v2, sqlx, JWT v4, gosnmp, webpush-go</td></tr>
+          <tr><td>Database</td><td>MySQL 8.0 (operasional), ClickHouse 24.3 (time-series log)</td></tr>
+          <tr><td>ML</td><td>Python 3, scikit-learn (Isolation Forest), FastAPI, pandas, joblib</td></tr>
+          <tr><td>Infra</td><td>Docker, Docker Compose, Makefile</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Skema Database</div>
+        <p><strong>MySQL (5 tabel):</strong></p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0">
+          <span class="tag tag-purple">users</span>
+          <span class="tag tag-purple">devices</span>
+          <span class="tag tag-purple">alerts</span>
+          <span class="tag tag-purple">feedbacks</span>
+          <span class="tag tag-purple">push_subscriptions</span>
+        </div>
+        <p><strong>ClickHouse (1 tabel + 2 views):</strong></p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:8px 0">
+          <span class="tag tag-cyan">network_logs</span>
+          <span class="tag tag-cyan">daily_stats (view)</span>
+          <span class="tag tag-cyan">top_targets (view)</span>
+        </div>
+        <p style="margin-top:8px; font-size:13px; color:var(--text-muted)">Network logs menggunakan MergeTree engine, partisi bulanan, TTL 6 bulan auto-delete, dengan 15 kolom metrik jaringan.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 11: PENUTUP -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="slide slide-cover" data-index="11">
+  <div class="cover-content">
+    <div class="cover-badge">Kesimpulan</div>
+    <h1 class="cover-title" style="font-size:42px">Terima Kasih</h1>
+    <p class="cover-subtitle" style="max-width:600px">
+      SCINetwork telah menyelesaikan <strong style="color:#34d399">85% pengembangan</strong>.
+      Seluruh fitur inti telah diimplementasikan dan berjalan.
+      Saat ini memasuki tahap <em>Evaluasi (DSR Tahap 5)</em> untuk memvalidasi
+      efektivitas artefak dalam menyelesaikan masalah deteksi gangguan jaringan.
+    </p>
+    <div style="display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap;">
+      <span class="tag tag-green" style="font-size:13px; padding:6px 16px">✅ Backend API Complete</span>
+      <span class="tag tag-green" style="font-size:13px; padding:6px 16px">✅ Frontend Dashboard Complete</span>
+      <span class="tag tag-green" style="font-size:13px; padding:6px 16px">✅ ML Isolation Forest Complete</span>
+      <span class="tag tag-orange" style="font-size:13px; padding:6px 16px">🔄 Evaluasi & UAT In Progress</span>
+    </div>
+  </div>
+</div>
+
+</div> <!-- /slides-container -->
+
+<!-- ── Navigation Bar ─────────────────────────────────────────────────── -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← Sebelumnya</button>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+    <div class="nav-dots" id="navDots"></div>
+    <div class="nav-info" id="navInfo">1 / 12</div>
+  </div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">Selanjutnya →</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  const dots = document.getElementById('navDots');
+  const info = document.getElementById('navInfo');
+
+  // Create dots
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goTo(i);
+    dots.appendChild(dot);
+  }
+
+  function goTo(idx) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(total - 1, idx));
+    slides[current].classList.add('active');
+    updateNav();
+  }
+
+  function navigate(dir) { goTo(current + dir); }
+
+  function updateNav() {
+    info.textContent = `${current + 1} / ${total}`;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.querySelectorAll('.nav-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  updateNav();
+</script>
+
+</body>
+</html>
