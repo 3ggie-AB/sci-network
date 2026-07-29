@@ -58,6 +58,7 @@ services:
     container_name: scinetwork_app
     restart: unless-stopped
     env_file: ./backend/.env
+    dns: 127.0.0.11
     environment:
       APP_PORT: 3535
       MYSQL_HOST: mysql
