@@ -7,7 +7,7 @@ COPY frontend/package.json frontend/bun.lock* ./
 RUN npm install --legacy-peer-deps
 
 COPY frontend .
-RUN npm run build && cp index.html .output/public/index.html
+RUN npm run build
 
 # ── Stage 2: Build Backend (Go Fiber) ──────────────────────────────────────────
 FROM golang:1.22-alpine AS backend-builder
@@ -38,7 +38,7 @@ WORKDIR /app
 
 COPY --from=backend-builder /app/bin/netmon .
 COPY --from=backend-builder /app/backend/.env.example .env
-COPY --from=frontend-builder /app/frontend/.output/public /app/public
+COPY --from=frontend-builder /app/frontend/dist /app/public
 
 EXPOSE 3535
 
