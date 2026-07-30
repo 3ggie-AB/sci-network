@@ -5,10 +5,8 @@ function resolveApiBase() {
   const configured = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
   if (configured) return configured.replace(/\/+$/, "");
 
-  if (typeof window !== "undefined") {
-    return `${window.location.protocol}//${window.location.hostname}:3535`;
-  }
-  return "http://localhost:3535";
+  // Default to relative URL (empty string) so API requests automatically target current origin/host/port
+  return "";
 }
 
 const TOKEN_KEY = "scinetwork.token";
@@ -60,7 +58,9 @@ export async function api<T = unknown>(
     body = JSON.stringify(opts.json);
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...opts, headers, body });
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = path.startsWith("http") ? path : `${BASE}${normalizedPath}`;
+  const res = await fetch(url, { ...opts, headers, body });
   const text = await res.text();
   const data = text ? safeJSON(text) : null;
   if (!res.ok) {

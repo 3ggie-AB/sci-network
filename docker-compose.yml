@@ -66,6 +66,8 @@ services:
       ANOMALY_SIDECAR_URL: http://ml-sidecar:8001
     ports:
       - "3535:3535"
+    volumes:
+      - ./backend/public:/app/public
     depends_on:
       mysql:
         condition: service_healthy
