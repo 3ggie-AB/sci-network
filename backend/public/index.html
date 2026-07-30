@@ -6,9 +6,26 @@
     <title>SCINetwork — Network Observability</title>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="stylesheet" href="/assets/styles-BjsQnxWF.css" />
+    <script>
+      window.$_TSR = {
+        h: function() { this.hydrated = true; this.c(); },
+        e: function() { this.streamEnded = true; this.c(); },
+        c: function() { if (this.hydrated && this.streamEnded) { delete window.$_TSR; } },
+        p: function(fn) { fn(); },
+        buffer: [],
+        initialized: true,
+        streamEnded: true,
+        hydrated: false,
+        router: {
+          matches: [],
+          manifest: {"routes":{"__root__":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/__root.tsx","children":["/","/dashboard","/login","/register"],"preloads":["/assets/index-BA2zKZB7.js"]},"/":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/index.tsx","preloads":["/assets/index-AiO2gH8Q.js","/assets/push-notifications-B9eLVZcA.js","/assets/createLucideIcon-DKxQF--N.js","/assets/wifi-AERA1r_-.js"]},"/dashboard":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.tsx","children":["/dashboard/alerts","/dashboard/devices","/dashboard/feedbacks","/dashboard/logs","/dashboard/network","/dashboard/users","/dashboard/"],"preloads":["/assets/dashboard-DBXYXA27.js","/assets/DashboardLayout-CilvcL3e.js","/assets/button-RZAoea8B.js","/assets/createLucideIcon-DKxQF--N.js","/assets/push-notifications-B9eLVZcA.js"]},"/login":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/login.tsx","preloads":["/assets/login-GCP2oBg-.js","/assets/NetworkBackground-CmyfH_kh.js","/assets/button-RZAoea8B.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/createLucideIcon-DKxQF--N.js"]},"/register":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/register.tsx","preloads":["/assets/register-BCQr4iT0.js","/assets/NetworkBackground-CmyfH_kh.js","/assets/button-RZAoea8B.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/createLucideIcon-DKxQF--N.js"]},"/dashboard/alerts":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.alerts.tsx","preloads":["/assets/dashboard.alerts-Dm0qYa9G.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/alert-dialog-Cf1jkUjS.js","/assets/table-DZJF8odR.js","/assets/textarea-CKyb5DXE.js","/assets/check-CEWcPndw.js","/assets/trash-2-B9Xd5H3p.js"]},"/dashboard/devices":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.devices.tsx","preloads":["/assets/dashboard.devices-DC8dQTvd.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/table-DZJF8odR.js","/assets/select-CWq1nxg3.js","/assets/switch-Bxxo-e2-.js","/assets/plus-CJKK-4m3.js","/assets/trash-2-B9Xd5H3p.js","/assets/check-CEWcPndw.js"]},"/dashboard/feedbacks":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.feedbacks.tsx","preloads":["/assets/dashboard.feedbacks-zgQ7geeh.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/textarea-CKyb5DXE.js","/assets/table-DZJF8odR.js","/assets/plus-CJKK-4m3.js"]},"/dashboard/logs":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.logs.tsx","preloads":["/assets/dashboard.logs-DPVGDL74.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/alert-dialog-Cf1jkUjS.js","/assets/table-DZJF8odR.js","/assets/input-lMO_96dD.js","/assets/select-CWq1nxg3.js","/assets/trash-2-B9Xd5H3p.js","/assets/check-CEWcPndw.js"]},"/dashboard/network":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.network.tsx","preloads":["/assets/dashboard.network-BM2QIoiD.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/select-CWq1nxg3.js","/assets/textarea-CKyb5DXE.js","/assets/check-CEWcPndw.js"]},"/dashboard/users":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.users.tsx","preloads":["/assets/dashboard.users-BjyzgVyO.js","/assets/Combination-naY5Tgw_.js","/assets/index-DfhWR6xa.js","/assets/table-DZJF8odR.js","/assets/input-lMO_96dD.js","/assets/label-CPlxgymi.js","/assets/select-CWq1nxg3.js","/assets/switch-Bxxo-e2-.js","/assets/plus-CJKK-4m3.js","/assets/trash-2-B9Xd5H3p.js","/assets/check-CEWcPndw.js"]},"/dashboard/":{"filePath":"/home/egi/Documents/sci-network/frontend/src/routes/dashboard.index.tsx","preloads":["/assets/dashboard.index-DFT3Vkr0.js","/assets/Combination-naY5Tgw_.js","/assets/select-CWq1nxg3.js","/assets/wifi-AERA1r_-.js","/assets/check-CEWcPndw.js"]}},"clientEntry":"/assets/index-BA2zKZB7.js"},
+          dehydratedData: {},
+          lastMatchId: ""
+        }
+      };
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/assets/index-Dw-VJyfv.js"></script>
+    <script type="module" src="/assets/index-BA2zKZB7.js"></script>
   </body>
 </html>

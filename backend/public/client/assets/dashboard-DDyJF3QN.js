@@ -1,1 +1,0 @@
-import{j as o,O as r}from"./index-Dw-VJyfv.js";import{D as t}from"./DashboardLayout-0KsVpQQj.js";import"./button-DbYD1_7e.js";import"./createLucideIcon-ZMEx8bKz.js";import"./push-notifications-Mf5uIPMM.js";function e(){return o.jsx(t,{children:o.jsx(r,{})})}export{e as component};

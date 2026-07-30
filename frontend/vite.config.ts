@@ -34,6 +34,29 @@ function generateSpaIndexPlugin() {
         .sort((a, b) => fs.statSync(path.join(assetsDir, b)).size - fs.statSync(path.join(assetsDir, a)).size)[0]
         || jsFiles.sort((a, b) => fs.statSync(path.join(assetsDir, b)).size - fs.statSync(path.join(assetsDir, a)).size)[0];
 
+      // Read generated routes manifest from server build if available
+      const serverAssetsDir = path.join(publicDir, "server/assets");
+      let manifestStr = JSON.stringify({ routes: { __root__: { children: ["/", "/dashboard", "/login", "/register"] } } });
+
+      if (fs.existsSync(serverAssetsDir)) {
+        const serverFiles = fs.readdirSync(serverAssetsDir);
+        const manifestFile = serverFiles.find((f) => f.includes("manifest"));
+        if (manifestFile) {
+          const content = fs.readFileSync(path.join(serverAssetsDir, manifestFile), "utf-8");
+          const match = content.match(/tsrStartManifest\s*=\s*\(\)\s*=>\s*\(([\s\S]+?)\);/);
+          if (match) {
+            try {
+              const parsed = Function(`return (${match[1]})`)();
+              if (parsed) {
+                manifestStr = JSON.stringify(parsed);
+              }
+            } catch (e) {
+              console.error("[SPA Plugin] Manifest parse error:", e);
+            }
+          }
+        }
+      }
+
       if (cssFile && mainJsFile) {
         const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -43,9 +66,26 @@ function generateSpaIndexPlugin() {
     <title>SCINetwork — Network Observability</title>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="stylesheet" href="/assets/${cssFile}" />
+    <script>
+      window.$_TSR = {
+        h: function() { this.hydrated = true; this.c(); },
+        e: function() { this.streamEnded = true; this.c(); },
+        c: function() { if (this.hydrated && this.streamEnded) { delete window.$_TSR; } },
+        p: function(fn) { fn(); },
+        buffer: [],
+        initialized: true,
+        streamEnded: true,
+        hydrated: false,
+        router: {
+          matches: [],
+          manifest: ${manifestStr},
+          dehydratedData: {},
+          lastMatchId: ""
+        }
+      };
+    </script>
   </head>
   <body>
-    <div id="root"></div>
     <script type="module" src="/assets/${mainJsFile}"></script>
   </body>
 </html>
